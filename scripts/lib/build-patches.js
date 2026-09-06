@@ -1,7 +1,7 @@
 /**
  * Write patches.json from a mod folder (`patches.json`, `patches.ts`, or `modinfo.ts` exports).
  */
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -128,7 +128,13 @@ export async function buildPatches(outDir, options) {
   const patches = modDebug ? [...production, ...(debugPatches ?? [])] : [...production];
   validatePatches(patches);
 
-  writeJsonIfChanged(join(outDir, "patches.json"), patches);
+  const patchesPath = join(outDir, "patches.json");
+  if (patches.length === 0) {
+    if (existsSync(patchesPath)) rmSync(patchesPath);
+    return patches;
+  }
+
+  writeJsonIfChanged(patchesPath, patches);
 
   return patches;
 }

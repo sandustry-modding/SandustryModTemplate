@@ -39,7 +39,7 @@ import { writeJsonIfChanged, writeTextIfChanged } from "../lib/write-if-changed.
 const ROOT = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
 const MODKIT_DIR = join(ROOT, "modkit");
 const INTERNAL_ESBUILD = join(MODKIT_DIR, "internal/esbuild");
-const CONSOLE_INJECT = join(INTERNAL_ESBUILD, "console.ts");
+const CONSOLE_SHIM = join(INTERNAL_ESBUILD, "console.ts");
 const args = process.argv.slice(2);
 if (args.includes("--examples")) ensureExamplesRepo(ROOT);
 const watch = args.includes("--watch");
@@ -246,7 +246,7 @@ function toSourceMapFileUrl(source, outDir) {
 }
 
 /**
- * Mark the console inject shim as ignore-listed.
+ * Mark the console alias shim as ignore-listed.
  * Debuggers and DevTools then skip those frames on console output.
  * @param {{ sources?: string[]; ignoreList?: number[] }} map
  */
@@ -327,7 +327,7 @@ function maybePatchWorkerSourceMap(mod) {
 }
 
 /**
- * Patch a plain inline source map (worker bundles): `file://` sources and ignore-list console inject.
+ * Patch a plain inline source map (worker bundles): `file://` sources and ignore-list console shim.
  * @param {string} filePath
  */
 function patchInlineSourceMap(filePath) {
@@ -386,7 +386,10 @@ function commonBundleOptions(mod) {
       __MOD_DEBUG__: modDebug ? "true" : "false",
       __MOD_ID__: JSON.stringify(manifestModId(mod)),
     },
-    inject: [CONSOLE_INJECT],
+    alias: {
+      console: CONSOLE_SHIM,
+    },
+    inject: ["console"],
     logLevel: "info",
   };
 }
@@ -396,11 +399,13 @@ function commonBundleOptions(mod) {
  * @returns {import("esbuild").BuildOptions}
  */
 function bundleOptions(mod) {
+  const common = commonBundleOptions(mod);
   return {
-    ...commonBundleOptions(mod),
+    ...common,
     entryPoints: [mod.main],
     outfile: join(mod.outDir, "main.js"),
     alias: {
+      ...common.alias,
       react: join(INTERNAL_ESBUILD, "react.ts"),
       "react/jsx-runtime": join(INTERNAL_ESBUILD, "jsx-runtime.ts"),
       "react/jsx-dev-runtime": join(INTERNAL_ESBUILD, "jsx-dev-runtime.ts"),
@@ -412,6 +417,7 @@ function bundleOptions(mod) {
         `// Generated — edit ${mod.repoPath}/ and run npm run dev.`,
         "// Runs as a plain script via new Function(...). No import/export.",
         "// sandkit is already in scope (loader wraps the body).",
+        "const electron = globalThis.window?.electron;",
       ].join("\n"),
     },
   };
@@ -419,7 +425,7 @@ function bundleOptions(mod) {
 
 /**
  * Worker bundle — same esm script body + free `sandkit`, no React inject.
- * Console inject adds a styled `[modId]` badge on every `console.*` line.
+ * Console alias adds a `[modId]` prefix on every `console.*` line.
  * @param {import("../lib/mods.js").LoadedMod} mod
  * @returns {import("esbuild").BuildOptions}
  */
@@ -437,6 +443,7 @@ function workerBundleOptions(mod) {
         `// Generated — edit ${mod.repoPath}/worker.ts and run npm run dev.`,
         "// Worker entry via new Function(...). No import/export.",
         "// sandkit is already in scope (worker-thread api).",
+        "const electron = globalThis.window?.electron;",
       ].join("\n"),
     },
   };
@@ -557,7 +564,7 @@ function extraWatchDirs(mod) {
 /**
  * Main entry only (workers skip this):
  * Wrap the entry body in try/catch so load failures log with `console.error`
- * (modId prefix via inject). Attach watch roots for the manifest and static `mod/`.
+ * (modId prefix via console alias). Attach watch roots for the manifest and static `mod/`.
  *
  * Uses a block wrap (not top-level `return`) because entries with `import` are
  * ESM and reject top-level return.

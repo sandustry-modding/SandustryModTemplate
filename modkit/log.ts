@@ -1,15 +1,12 @@
 /**
- * File logging via the Sandustry Electron bridge (`window.electron.log`).
+ * File logging via the Sandustry Electron bridge (`electron.log`).
  *
  * Lines go to `logs/main.log` (workspace `sandustry/logs/` → OS sandustry logs:
  * `~/.config/sandustry/logs` or `%APPDATA%/sandustry/logs`) with the mod id as
  * scope. Bare `console.*` in mod bundles already do this through the esbuild
- * inject — use this when you want a custom scope tag without going through
+ * console alias — use this when you want a custom scope tag without going through
  * `console`.
  */
-
-type ElectronLogLevel = "debug" | "info" | "warn" | "error";
-type ElectronLog = (level: ElectronLogLevel, scope: string, message: string) => void;
 
 export type CreateLoggerOptions = {
   /** Scope tag in each file line (default: `modId`). */
@@ -25,17 +22,9 @@ export type ModLogger = {
   (message: string, data?: Record<string, unknown>): void;
 };
 
-function electronLog(): ElectronLog | undefined {
-  try {
-    const g = globalThis as typeof globalThis & {
-      electron?: { log?: ElectronLog };
-      window?: { electron?: { log?: ElectronLog } };
-    };
-    const log = g.electron?.log ?? g.window?.electron?.log;
-    return typeof log === "function" ? log : undefined;
-  } catch {
-    return undefined;
-  }
+function electronLog(): typeof electron.log | undefined {
+  const log = electron?.log;
+  return typeof log === "function" ? log : undefined;
 }
 
 function writeLog(
@@ -44,7 +33,7 @@ function writeLog(
   message: string,
   options?: { console?: boolean },
 ): void {
-  // Bypass the console inject — the line already carries its tag.
+  // Bypass the console alias shim — the line already carries its tag.
   if (options?.console !== false) globalThis.console.log(`[${scope}] ${message}`);
   const log = electronLog();
   if (!log) return;

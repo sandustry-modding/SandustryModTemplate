@@ -4,7 +4,11 @@ Source of truth: `sandustry/source/preload.js`.
 Main handlers: `sandustry/source/main.js`.
 Live keys match preload.
 
-Bridge object: `window.electron`.
+Bridge object: `window.electron` (ambient free name: `electron`).
+
+Types: `@sandustry-modding/types/electron` (`ElectronBridge`, result helpers, nested APIs).
+Full `@param` / `@returns` JSDoc lives on each method in that module.
+Ambient: `electron`, `ElectronBridge`, `ElectronLogLevel`, `ElectronPlatform`, and `window.electron` on `@sandustry-modding/types`.
 
 ## Host check
 

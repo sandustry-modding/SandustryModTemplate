@@ -100,6 +100,25 @@ const game: RetroConsoleGame<MyState> = {
 registerRetroGame(game);
 ```
 
+## Live config
+
+Tunable debug numbers on a `globalThis` key, with a Dev Tools **Config** tab.
+
+See [live-config.md](live-config.md).
+
+```ts
+import { createLiveConfig } from "@modkit/utils";
+
+export const live = createLiveConfig({
+  id: "author.mod",
+  title: "My mod",
+  globalKey: "authorMod",
+  defaults: { debug: false, speed: 1 },
+});
+
+export const config = live.config;
+```
+
 ## Module layout
 
 | File               | Exports                                     |
@@ -109,3 +128,4 @@ registerRetroGame(game);
 | `settings.ts`      | `isEnabled`                                 |
 | `scene.ts`         | `inGame`                                    |
 | `retro-console.ts` | `registerRetroGame` and retro console types |
+| `live-config.ts`   | `createLiveConfig` and live-config registry |

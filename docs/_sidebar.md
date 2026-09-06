@@ -8,6 +8,7 @@
   - [React](modkit/react.md)
   - [UI kit](ui/README.md)
   - [Utils](modkit/utils.md)
+  - [Live config](modkit/live-config.md)
   - [Integration tests](modkit/test.md)
 
 - Reference

@@ -22,14 +22,12 @@ Debug builds emit **inline** source maps on `main.js` (needed for `new Function`
 Use `--sourcemap` to force maps on a release build, or `--no-sourcemap` to omit them from a debug build.
 
 `__MOD_DEBUG__` is `true` in dev builds and `false` in release.
-All builds inject `console.ts` so bare `console.*` calls get a `[modId]` prefix and are written to the game log file.
+All builds alias `console` to `console.ts` and inject it so bare `console.*` calls get a `[modId]` prefix and are written to the game log file.
 
 ## File logging (`console`)
 
-All builds inject [`modkit/internal/esbuild/console.ts`](../modkit/internal/esbuild/console.ts) via esbuild [`inject`](https://esbuild.github.io/api/#inject).
-Bare `console.log` / `info` / `warn` / `error` / `debug` in mod code get a plain `[modId]` prefix in DevTools and are forwarded to `window.electron.log` (IPC `log:write`).
-The host appends them to `logs/main.log` with the mod id as scope (`sandustry/logs/` → OS sandustry logs: `~/.config/sandustry/logs` or `%APPDATA%/sandustry/logs`). `__MOD_ID__` comes from that mod's `modinfo.ts` at build time.
-The shim uses bound native methods (not per-call wrappers) so DevTools links console output to your mod source.
+All builds alias [`modkit/internal/esbuild/console.ts`](../modkit/internal/esbuild/console.ts) as `console` and inject it (same pattern as the `react` alias).
+Each line goes to DevTools with a `[modId]` prefix and to `window.electron.log` (IPC `log:write`).
 Debug builds also add `console.ts` to the source map `ignoreList` so breakpoints skip the shim when stepping.
 
 Use `createLogger` from `@modkit/log` when you want a custom scope tag without going through `console`.
@@ -156,8 +154,7 @@ Restart the game (F5) after `worker.js` or `patches.json` changes.
 Save reload (`?db_load=`) does not re-apply those on Steam.
 
 Renderer attach loads source maps from scripts named `sandkit-workshop://<modId>/main.js` (and from the OS mods folder / `dist/`).
-Debug builds rewrite inline maps to `file://` sources, add a sandkit loader line offset, set matching `sourceURL`, and mark injected `console.ts` as ignore-listed so breakpoints resolve to mod source instead of the console shim.
-Console log links use bound native methods so they point at the mod call site.
+Debug builds rewrite inline maps to `file://` sources, add a sandkit loader line offset, set matching `sourceURL`, and mark the aliased `console.ts` as ignore-listed so breakpoints resolve to mod source instead of the console shim.
 
 ## Workshop publish
 

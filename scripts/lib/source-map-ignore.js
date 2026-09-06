@@ -1,4 +1,4 @@
-/** esbuild `inject` console shim. */
+/** esbuild console alias shim (`inject: ["console"]`). */
 export const CONSOLE_INJECT_SOURCE_SUFFIX = "modkit/internal/esbuild/console.ts";
 
 function posixPath(source) {
