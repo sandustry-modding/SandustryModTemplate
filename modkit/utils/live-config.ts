@@ -1,5 +1,6 @@
 export const LIVE_CONFIG_GLOBAL = "modkitLiveConfig";
 export const LIVE_CONFIG_EVENT = "modkit:live-config";
+export const LIVE_CONFIG_BUFFER_PREFIX = "modkit:live-config:";
 
 export type LiveConfigValue = boolean | number;
 
@@ -72,6 +73,12 @@ type Host = typeof globalThis & {
   [LIVE_CONFIG_GLOBAL]?: Registry;
 };
 
+type SharedBuffers = {
+  ensure?: (key: string, config: { type: string; length: number }) => unknown;
+  require?: (key: string, config: { type: string; length: number }) => unknown;
+  get?: (key: string) => unknown;
+};
+
 function host(): Host {
   return globalThis as Host;
 }
@@ -87,30 +94,24 @@ function overlay(
   }
 }
 
-export function humanizeLiveConfigKey(key: string): string {
-  const spaced = key.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2");
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1).toLowerCase();
-}
-
 export function inferLiveConfigGroup(key: string): string {
-  if (key === "debug" || key.startsWith("debug")) return "Debug";
-  if (key.startsWith("pine")) return "Pine";
-  if (key.startsWith("oak")) return "Oak";
-  if (key.startsWith("wood")) return "Wood";
-  if (key.startsWith("compost") || key.startsWith("dirt") || key.startsWith("wet"))
-    return "Compost";
-  if (key.startsWith("sieve")) return "Sieve";
-  return "General";
+  if (key === "debug" || key.startsWith("debug")) return "debug";
+  if (key.startsWith("pine")) return "pine";
+  if (key.startsWith("oak")) return "oak";
+  if (key.startsWith("wood")) return "wood";
+  if (key.startsWith("compost") || key.startsWith("dirt") || key.startsWith("wet")) return "compost";
+  if (key.startsWith("sieve")) return "sieve";
+  return "general";
 }
 
 export const LIVE_CONFIG_GROUP_ORDER = [
-  "Debug",
-  "Pine",
-  "Oak",
-  "Wood",
-  "Compost",
-  "Sieve",
-  "General",
+  "debug",
+  "pine",
+  "oak",
+  "wood",
+  "compost",
+  "sieve",
+  "general",
 ];
 
 function inferNumberRange(
@@ -122,6 +123,47 @@ function inferNumberRange(
   }
   if (Number.isInteger(value)) return { min: 0, step: 1 };
   return { step: 0.01 };
+}
+
+export function groupLiveConfigFields(
+  fields: LiveConfigField[],
+): { group: string; fields: LiveConfigField[] }[] {
+  const buckets = new Map<string, LiveConfigField[]>();
+  for (const field of fields) {
+    const list = buckets.get(field.group) ?? [];
+    list.push(field);
+    buckets.set(field.group, list);
+  }
+  const ranked = LIVE_CONFIG_GROUP_ORDER.filter((group) => buckets.has(group));
+  const extra = [...buckets.keys()].filter((group) => !LIVE_CONFIG_GROUP_ORDER.includes(group));
+  return [...ranked, ...extra].map((group) => ({ group, fields: buckets.get(group) ?? [] }));
+}
+
+function formatLiveConfigValue(value: LiveConfigValue): string {
+  if (typeof value === "boolean") return String(value);
+  if (Number.isInteger(value)) return String(value);
+  return Number(value.toPrecision(12)).toString();
+}
+
+/** TypeScript object literal for pasting into a createLiveConfig defaults block. */
+export function formatLiveConfigDefaults(entry: LiveConfigEntry): string {
+  const values = entry.get();
+  const groups = groupLiveConfigFields(entry.fields);
+  const lines: string[] = ["{"];
+  const fieldCount = entry.fields.length;
+  let written = 0;
+
+  for (let groupIndex = 0; groupIndex < groups.length; groupIndex += 1) {
+    if (groupIndex > 0) lines.push("");
+    for (const field of groups[groupIndex].fields) {
+      written += 1;
+      const comma = written < fieldCount ? "," : "";
+      lines.push(`  ${field.key}: ${formatLiveConfigValue(values[field.key] as LiveConfigValue)}${comma}`);
+    }
+  }
+
+  lines.push("}");
+  return lines.join("\n");
 }
 
 export function buildLiveConfigFields<T extends Record<string, LiveConfigValue>>(
@@ -136,7 +178,7 @@ export function buildLiveConfigFields<T extends Record<string, LiveConfigValue>>
     return {
       key,
       kind,
-      label: extra.label ?? humanizeLiveConfigKey(key),
+      label: extra.label ?? key,
       description: extra.description,
       group: extra.group ?? inferLiveConfigGroup(key),
       min: extra.min ?? range.min,
@@ -187,6 +229,19 @@ export function subscribeLiveConfig(onChange: () => void): () => void {
   return liveConfigRegistry().subscribe(onChange);
 }
 
+function sharedBuffers(): SharedBuffers | null {
+  try {
+    const buffers = sandkit.api.shared.buffers;
+    return buffers ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function asFloat64(value: unknown): Float64Array | null {
+  return value instanceof Float64Array ? value : null;
+}
+
 function broadcast(id: string, values: Record<string, LiveConfigValue>): void {
   try {
     sandkit.api.events.emit(LIVE_CONFIG_EVENT, { id, values: { ...values } });
@@ -199,33 +254,96 @@ export function createLiveConfig<T extends Record<string, LiveConfigValue>>(
   spec: LiveConfigSpec<T>,
 ): LiveConfigHandle<T> {
   const defaults = { ...spec.defaults };
+  const keys = Object.keys(defaults) as (keyof T & string)[];
   const fields = buildLiveConfigFields(defaults, spec.fields);
+  const bufferKey = `${LIVE_CONFIG_BUFFER_PREFIX}${spec.id}`;
+  const bufferLength = 1 + keys.length;
   let bound: T | undefined;
+  let view: Float64Array | null = null;
+  let lastGen = 0;
+  let writable = false;
+
+  function attachView(): Float64Array | null {
+    if (view) return view;
+    const buffers = sharedBuffers();
+    if (!buffers) return null;
+    const config = { type: "float64", length: bufferLength };
+    try {
+      if (typeof buffers.ensure === "function") {
+        view = asFloat64(buffers.ensure(bufferKey, config));
+        writable = Boolean(view);
+      } else if (typeof buffers.require === "function") {
+        view = asFloat64(buffers.require(bufferKey, config));
+      } else if (typeof buffers.get === "function") {
+        view = asFloat64(buffers.get(bufferKey));
+      }
+    } catch {
+      return null;
+    }
+    return view;
+  }
+
+  function pushShared(live: T): void {
+    const sab = attachView();
+    if (!sab || !writable) return;
+    sab[0] += 1;
+    if (sab[0] === 0) sab[0] = 1;
+    for (let i = 0; i < keys.length; i += 1) {
+      const value = live[keys[i]];
+      sab[i + 1] = typeof value === "boolean" ? (value ? 1 : 0) : Number(value);
+    }
+    lastGen = sab[0];
+  }
+
+  function pullShared(live: T): void {
+    const sab = attachView();
+    if (!sab) return;
+    const gen = sab[0];
+    if (!gen || gen === lastGen) return;
+    lastGen = gen;
+    for (let i = 0; i < keys.length; i += 1) {
+      const key = keys[i];
+      const raw = sab[i + 1];
+      if (!Number.isFinite(raw)) continue;
+      if (typeof defaults[key] === "boolean") {
+        live[key] = (raw !== 0) as T[typeof key];
+      } else {
+        live[key] = raw as T[typeof key];
+      }
+    }
+  }
 
   function get(): T {
     const bag = globalThis as Record<string, unknown>;
     const current = bag[spec.globalKey];
-    if (current === bound && bound) return bound;
-    const next = { ...defaults };
-    if (current && typeof current === "object") {
-      overlay(next, current as Record<string, unknown>, defaults);
+    if (!bound) bound = { ...defaults };
+    if (current && typeof current === "object" && current !== bound) {
+      overlay(bound, current as Record<string, unknown>, defaults);
+      bag[spec.globalKey] = bound;
+      pushShared(bound);
+      return bound;
     }
-    bag[spec.globalKey] = next;
-    bound = next;
-    return next;
+    bag[spec.globalKey] = bound;
+    pullShared(bound);
+    return bound;
+  }
+
+  function publish(live: T): void {
+    pushShared(live);
+    liveConfigRegistry().notify();
+    broadcast(spec.id, live);
   }
 
   function set<K extends keyof T>(key: K, value: T[K]): void {
-    get()[key] = value;
-    liveConfigRegistry().notify();
-    broadcast(spec.id, get());
+    const live = get();
+    live[key] = value;
+    publish(live);
   }
 
   function reset(): void {
     const live = get();
     for (const key of Object.keys(defaults) as (keyof T)[]) live[key] = defaults[key];
-    liveConfigRegistry().notify();
-    broadcast(spec.id, live);
+    publish(live);
   }
 
   const config = new Proxy({} as T, {
@@ -263,11 +381,13 @@ export function createLiveConfig<T extends Record<string, LiveConfigValue>>(
         if (body.id !== spec.id) return;
         if (!body.values || typeof body.values !== "object") return;
         overlay(get(), body.values as Record<string, unknown>, defaults);
+        publish(get());
       });
     },
   };
 
-  get();
+  const initial = get();
+  pushShared(initial);
   liveConfigRegistry().register({
     id: spec.id,
     title: spec.title,

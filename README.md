@@ -78,7 +78,7 @@ Shared code goes in `modkit/`.
 ### Development
 
 - **`npm run dev`** — Watch the F5 / `dev:pick` set (plus any companions from `.env` `DEV_ALWAYS_MODS`).
-  Mods stay in `dist/` unless `DEV_CLEANUP=true`.
+  Mods stay in `dist/` unless `DEV_CLEANUP=true` (owned only) or `DEV_CLEANUP=all`.
   F5 **Sandustry** writes that one folder and does not uninstall other OS mods.
 - **`npm run dev:release`** — Same watch as `dev`, without `debugPatches` or sourcemaps.
   Use to test mods before upload to workshop.

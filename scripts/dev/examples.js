@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 import { styleText } from "../lib/cli-style.js";
 import { ensureExamplesRepo } from "../lib/examples-repo.js";
 import { resolveDevCleanup } from "../lib/env.js";
-import { removeOwnedGameMods } from "../lib/mod-path.js";
+import { removeAllDistContents, removeOwnedGameMods } from "../lib/mod-path.js";
 import { pickDevModArgs } from "./pick-dev-mods.js";
 
 const ROOT = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
@@ -35,11 +35,16 @@ let cleaned = false;
 function cleanup() {
   if (cleaned) return;
   cleaned = true;
-  if (!resolveDevCleanup()) return;
+  const cleanup = resolveDevCleanup();
+  if (cleanup === "off") return;
   try {
-    removeOwnedGameMods(ROOT);
+    if (cleanup === "all") removeAllDistContents(ROOT);
+    else removeOwnedGameMods(ROOT);
   } catch (err) {
-    console.error(styleText("red", "Failed to remove owned mods:"), err);
+    console.error(
+      styleText("red", cleanup === "all" ? "Failed to clear dist/:" : "Failed to remove owned mods:"),
+      err,
+    );
   }
 }
 

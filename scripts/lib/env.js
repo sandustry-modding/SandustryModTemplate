@@ -142,9 +142,18 @@ export function watchModFolders(selection, setting, validFolders) {
   return [...merged].sort((a, b) => a.localeCompare(b));
 }
 
-/** Remove owned OS mod folders when `npm run dev` stops. Default off. */
+/**
+ * Cleanup when `npm run dev` stops.
+ * `false` (default) — keep mods in `dist/`.
+ * `true` — remove template-owned mods only.
+ * `all` — remove every mod folder in `dist/`.
+ * @returns {"off" | "owned" | "all"}
+ */
 export function resolveDevCleanup() {
-  return envFlag("DEV_CLEANUP", false);
+  const raw = envString("DEV_CLEANUP", "false").toLowerCase();
+  if (raw === "all") return "all";
+  if (["1", "true", "yes", "on"].includes(raw)) return "owned";
+  return "off";
 }
 
 /**

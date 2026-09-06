@@ -23,7 +23,11 @@ test("resolveDevCleanup defaults off", () => {
   const prev = process.env.DEV_CLEANUP;
   try {
     delete process.env.DEV_CLEANUP;
-    assert.equal(resolveDevCleanup(), false);
+    assert.equal(resolveDevCleanup(), "off");
+    process.env.DEV_CLEANUP = "true";
+    assert.equal(resolveDevCleanup(), "owned");
+    process.env.DEV_CLEANUP = "all";
+    assert.equal(resolveDevCleanup(), "all");
   } finally {
     if (prev === undefined) delete process.env.DEV_CLEANUP;
     else process.env.DEV_CLEANUP = prev;

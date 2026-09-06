@@ -102,7 +102,7 @@ registerRetroGame(game);
 
 ## Live config
 
-Tunable debug numbers on a `globalThis` key, with a Dev Tools **Config** tab.
+Tunable debug numbers on a `globalThis` key, with an F3 live-config panel.
 
 See [live-config.md](live-config.md).
 

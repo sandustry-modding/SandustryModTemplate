@@ -170,6 +170,41 @@ function okDistLink(modsDir, already) {
   );
 }
 
+/** @param {string} repoRoot @returns {string} Absolute path to the OS mods folder `dist/` links to. */
+function readRepoDistTarget(repoRoot) {
+  const distPath = join(repoRoot, REPO_DIST_LINK);
+  try {
+    const stat = lstatSync(distPath);
+    if (stat.isSymbolicLink()) {
+      return resolve(dirname(distPath), readlinkSync(distPath));
+    }
+    if (stat.isDirectory()) return distPath;
+  } catch {
+    /* dist/ missing */
+  }
+  return sandustryModsDir();
+}
+
+/**
+ * Remove every mod folder under `dist/` (the OS Sandustry mods directory).
+ * Used when `npm run dev` stops with `DEV_CLEANUP=all`.
+ * Leaves the `dist/` mods-folder link in place.
+ * @param {string} repoRoot
+ */
+export function removeAllDistContents(repoRoot) {
+  const modsDir = readRepoDistTarget(repoRoot);
+  if (!existsSync(modsDir)) return;
+
+  for (const name of readdirSync(modsDir)) {
+    const child = join(modsDir, name);
+    removePath(child);
+    console.log(`Removed ${child}`);
+  }
+
+  removePath(devOwnedModsPath(repoRoot));
+  removePath(templateByFolderPath(repoRoot));
+}
+
 /**
  * Remove OS mod folders built by the last dev watch session.
  * Used when `npm run dev` stops. Leaves the `dist/` mods-folder link in place.

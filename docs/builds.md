@@ -9,7 +9,7 @@ Bundle with esbuild `format: "esm"` and do not export from the entry — the out
 | Command               | `debugPatches` | Sourcemaps | Output                                                           |
 | --------------------- | -------------- | ---------- | ---------------------------------------------------------------- |
 | `npm run build`       | Omitted        | Off        | `build/<modinfo.id>/` only (no OS mods folder, no `dist/` links) |
-| `npm run dev`         | Included       | Inline     | OS mods folder while watching; kept unless `DEV_CLEANUP=true`    |
+| `npm run dev`         | Included       | Inline     | OS mods folder while watching; kept unless `DEV_CLEANUP=true` or `all` |
 | `npm run dev:release` | Omitted        | Off        | OS mods folder while watching (same cleanup as `dev`)            |
 | `--game` / `--debug`  | Included       | Inline     | Game mods folder                                                 |
 
@@ -112,6 +112,7 @@ npm run sandustry        # stop + launch (no build; keep npm run dev for the bun
 ```
 
 When `npm run dev` stops (Ctrl+C, terminal close, or process exit), it removes the OS mod folders this template built in that watch session **only if** `.env` has `DEV_CLEANUP=true` (default `false` keeps them).
+Set `DEV_CLEANUP=all` to remove **every** mod folder in `dist/` instead.
 The `dist/` link stays.
 Use `npm run build` when you want release staging under `build/`.
 

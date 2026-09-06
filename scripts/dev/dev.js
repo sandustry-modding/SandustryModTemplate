@@ -3,7 +3,7 @@
  * Watch src/<name>/ and build each mod into the game mods folder
  * (Linux: ~/.config/sandustry/mods/<modinfo.id>;
  *  Windows: %APPDATA%/sandustry/mods/<modinfo.id>).
- * On stop, remove those owned mods only when DEV_CLEANUP=true.
+ * On stop, remove mods per `DEV_CLEANUP` (`true` = owned only, `all` = wipe `dist/`).
  * Usage: npm run dev [-- --mod template]
  *        npm run dev:release  — watch without debug / sourcemaps
  *        npm run dev:pick  — TTY mod picker (last choice pre-selected)
@@ -19,7 +19,7 @@ import { styleText } from "../lib/cli-style.js";
 import { resolveDevCleanup, resolveDevModsSetting } from "../lib/env.js";
 import { DEFAULT_MOD_ROOTS, discoverMods, parseModFilters } from "../lib/mods.js";
 import { syncLaunchDebugModPicker } from "../lib/sync-debug-mod-picker.js";
-import { removeOwnedGameMods } from "../lib/mod-path.js";
+import { removeAllDistContents, removeOwnedGameMods } from "../lib/mod-path.js";
 import {
   pickDevModArgs,
   readLastSelection,
@@ -86,11 +86,16 @@ let restartTimer;
 function cleanup() {
   if (cleaned) return;
   cleaned = true;
-  if (!resolveDevCleanup()) return;
+  const cleanup = resolveDevCleanup();
+  if (cleanup === "off") return;
   try {
-    removeOwnedGameMods(ROOT);
+    if (cleanup === "all") removeAllDistContents(ROOT);
+    else removeOwnedGameMods(ROOT);
   } catch (err) {
-    console.error(styleText("red", "Failed to remove owned mods:"), err);
+    console.error(
+      styleText("red", cleanup === "all" ? "Failed to clear dist/:" : "Failed to remove owned mods:"),
+      err,
+    );
   }
 }
 

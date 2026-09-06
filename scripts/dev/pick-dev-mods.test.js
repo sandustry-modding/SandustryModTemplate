@@ -22,7 +22,7 @@ test("parseEnvText keeps inline option comments out of values", () => {
 # comment
 DEV_MODS=all # selection | all
 DEV_ALWAYS_MODS=a,b # companions
-DEV_CLEANUP=false # false keep | true remove
+DEV_CLEANUP=false # false keep | true remove owned | all wipe dist/
 SANDUSTRY="/path/with # hash"
 EMPTY=
 `);
