@@ -17,7 +17,7 @@ test("collectTestHostPatches reads patches from built mods", () => {
     join(dir, "patches.json"),
     JSON.stringify([
       {
-        id: "stash-sandkit-by-mod",
+        id: "example-runtime-patch",
         file: "js/external-mod-runtime.js",
         find: "FIND",
         operation: "replace",
@@ -32,7 +32,7 @@ test("collectTestHostPatches reads patches from built mods", () => {
       (patch) =>
         typeof patch === "object" &&
         patch !== null &&
-        (patch as { id?: string }).id === "stash-sandkit-by-mod",
+        (patch as { id?: string }).id === "example-runtime-patch",
     ),
   );
 });
@@ -64,13 +64,13 @@ test("collectTestHostPatches dedupes identical patch ids across mods", () => {
   assert.equal((collector[0] as { modId?: string }).modId, "example.collector-element");
 });
 
-test("buildPatchedDistSources applies stash-sandkit-by-mod to external-mod-runtime.js", (t) => {
+test("buildPatchedDistSources applies external-mod-runtime.js patches", (t) => {
   const distDir = extractedDistDir();
   if (!distDir) {
     t.skip("No extracted sandustry dist. Run npm run setup.");
     return;
   }
-  const modsDir = mkdtempSync(join(tmpdir(), "sandustry-stash-patch-"));
+  const modsDir = mkdtempSync(join(tmpdir(), "sandustry-runtime-patch-"));
   const modDir = join(modsDir, "author.template");
   mkdirSync(modDir);
   writeFileSync(join(modDir, "modinfo.json"), JSON.stringify({ id: "author.template" }));
@@ -78,11 +78,11 @@ test("buildPatchedDistSources applies stash-sandkit-by-mod to external-mod-runti
     join(modDir, "patches.json"),
     JSON.stringify([
       {
-        id: "stash-sandkit-by-mod",
+        id: "example-runtime-marker",
         file: "js/external-mod-runtime.js",
-        find: "const t=we(e,{manifest:o,discovered:r});e.store.integrity.modsUsed=!0,await c(t)",
-        operation: "replace",
-        code: "const t=we(e,{manifest:o,discovered:r});(globalThis.__sandkitByMod||(globalThis.__sandkitByMod={}))[o.id]=t;e.store.integrity.modsUsed=!0,await c((typeof globalThis.__devToolsWrapSandkit==='function'?globalThis.__devToolsWrapSandkit(o.id,t):t))",
+        find: "const t=Ce(e,{manifest:o,discovered:r});e.store.integrity.modsUsed=!0,await c(t)",
+        operation: "insertBefore",
+        code: "/*example-runtime-marker*/",
         expectedMatches: 1,
       },
     ]),
@@ -90,7 +90,7 @@ test("buildPatchedDistSources applies stash-sandkit-by-mod to external-mod-runti
   const patches = collectTestHostPatches(modsDir);
   const patched = buildPatchedDistSources(distDir, { modsDir, patches });
   const runtime = patched.get("js/external-mod-runtime.js");
-  assert.ok(runtime?.includes("__sandkitByMod"), "stash patch missing from served runtime");
+  assert.ok(runtime?.includes("example-runtime-marker"), "runtime patch missing from served runtime");
 });
 
 test("buildPatchedDistSources applies collector admission once when both samples are present", (t) => {
