@@ -5,13 +5,13 @@ Document new vanilla findings in a skill.
 
 ## Markdown prose
 
-Put each sentence on its own line in markdown prose.
-Do not join multiple sentences on one line.
+Put each sentence on its own line in markdown files.  
+Do not join multiple sentences on one line.  
 Tables, fenced code blocks, and headings are excluded.
 
-The template guide lives in the root `README.md`.
-Kit and API pages live under `docs/`.
-Only `template` ships with this repo.
+The template guide lives in the root `README.md`.  
+Kit and API pages live under `docs/`.  
+Only `template` ships with this repo.  
 Sample mods live in [SandustryExamples](https://github.com/sandustry-modding/SandustryExamples). `npm run examples` clones that repo into `examples/`.
 Every other mod documents in its own repo: `README.md` and `CHANGELOG.md`.
 Its behavior, options, controls, and internals stay there.
