@@ -4,7 +4,7 @@ Shared React components under `modkit/ui/`.
 Import from `@modkit/ui`.
 
 ```ts
-import { OverlayRoot, FixedAnchor, Interactive, PanelCard } from "@modkit/ui";
+import { OverlayRoot, FixedAnchor, Interactive, Panel, Button } from "@modkit/ui";
 ```
 
 Each page has a live preview (Storybook-style iframe) plus props and a usage snippet.
@@ -12,8 +12,14 @@ Browse all previews on the [gallery](README.md).
 
 ## Components
 
+Host widgets wrap `sandkit.api.ui.components`.
+They only render inside Sandustry.
+
 | Component                      | Page                                                     |
 | ------------------------------ | -------------------------------------------------------- |
+| `Button`                       | [button.md](button.md)                                   |
+| `Panel`                        | [panel.md](panel.md)                                     |
+| `ActionSlot`                   | [action-slot.md](action-slot.md)                         |
 | `HotkeyBadge`                  | [hotkey-badge.md](hotkey-badge.md)                       |
 | `UiBox`                        | [ui-box.md](ui-box.md)                                   |
 | `InfoBanner`                   | [info-banner.md](info-banner.md)                         |

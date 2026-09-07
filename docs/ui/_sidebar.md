@@ -2,6 +2,11 @@
 - [Gallery](ui/README.md)
 - [Overview](ui/overview.md)
 
+- Host
+  - [Button](ui/button.md)
+  - [Panel](ui/panel.md)
+  - [ActionSlot](ui/action-slot.md)
+
 - Panels
   - [UiBox](ui/ui-box.md)
   - [InfoBanner](ui/info-banner.md)

@@ -1,9 +1,9 @@
 # UI kit
 
-Live canvases for every `modkit/ui` component.
-Open a name to see props and usage.
-Isolated preview pages use `?embed=Name`.
+Live canvases for replica HUD pieces under `modkit/ui`.
+Host widgets (`Button`, `Panel`, `ActionSlot`) have no static canvas.
 See [overview](overview.md) for imports, the component index, and shared styles.
+Isolated preview pages use `?embed=Name`.
 
 <section class="ui-gallery">
 

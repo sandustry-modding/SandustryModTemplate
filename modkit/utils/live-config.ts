@@ -73,10 +73,14 @@ type Host = typeof globalThis & {
   [LIVE_CONFIG_GLOBAL]?: Registry;
 };
 
-type SharedBuffers = {
-  ensure?: (key: string, config: { type: string; length: number }) => unknown;
-  require?: (key: string, config: { type: string; length: number }) => unknown;
-  get?: (key: string) => unknown;
+type LiveConfigScalar<V> = V extends boolean ? boolean : V extends number ? number : V;
+
+type LiveConfigValues<T extends Record<string, LiveConfigValue>> = {
+  [K in keyof T]: LiveConfigScalar<T[K]>;
+};
+
+type SharedBuffers = typeof sandkit.api.shared.buffers & {
+  require?: typeof sandkit.api.shared.buffers.ensure;
 };
 
 function host(): Host {
@@ -252,13 +256,14 @@ function broadcast(id: string, values: Record<string, LiveConfigValue>): void {
 
 export function createLiveConfig<T extends Record<string, LiveConfigValue>>(
   spec: LiveConfigSpec<T>,
-): LiveConfigHandle<T> {
-  const defaults = { ...spec.defaults };
-  const keys = Object.keys(defaults) as (keyof T & string)[];
-  const fields = buildLiveConfigFields(defaults, spec.fields);
+): LiveConfigHandle<LiveConfigValues<T>> {
+  type Config = LiveConfigValues<T>;
+  const defaults = { ...spec.defaults } as Config;
+  const keys = Object.keys(defaults) as (keyof Config & string)[];
+  const fields = buildLiveConfigFields(spec.defaults, spec.fields);
   const bufferKey = `${LIVE_CONFIG_BUFFER_PREFIX}${spec.id}`;
   const bufferLength = 1 + keys.length;
-  let bound: T | undefined;
+  let bound: Config | undefined;
   let view: Float64Array | null = null;
   let lastGen = 0;
   let writable = false;
@@ -267,7 +272,7 @@ export function createLiveConfig<T extends Record<string, LiveConfigValue>>(
     if (view) return view;
     const buffers = sharedBuffers();
     if (!buffers) return null;
-    const config = { type: "float64", length: bufferLength };
+    const config = { type: "float64" as const, length: bufferLength };
     try {
       if (typeof buffers.ensure === "function") {
         view = asFloat64(buffers.ensure(bufferKey, config));
@@ -283,7 +288,7 @@ export function createLiveConfig<T extends Record<string, LiveConfigValue>>(
     return view;
   }
 
-  function pushShared(live: T): void {
+  function pushShared(live: Config): void {
     const sab = attachView();
     if (!sab || !writable) return;
     sab[0] += 1;
@@ -295,7 +300,7 @@ export function createLiveConfig<T extends Record<string, LiveConfigValue>>(
     lastGen = sab[0];
   }
 
-  function pullShared(live: T): void {
+  function pullShared(live: Config): void {
     const sab = attachView();
     if (!sab) return;
     const gen = sab[0];
@@ -306,14 +311,14 @@ export function createLiveConfig<T extends Record<string, LiveConfigValue>>(
       const raw = sab[i + 1];
       if (!Number.isFinite(raw)) continue;
       if (typeof defaults[key] === "boolean") {
-        live[key] = (raw !== 0) as T[typeof key];
+        live[key] = (raw !== 0) as Config[typeof key];
       } else {
-        live[key] = raw as T[typeof key];
+        live[key] = raw as Config[typeof key];
       }
     }
   }
 
-  function get(): T {
+  function get(): Config {
     const bag = globalThis as Record<string, unknown>;
     const current = bag[spec.globalKey];
     if (!bound) bound = { ...defaults };
@@ -328,13 +333,13 @@ export function createLiveConfig<T extends Record<string, LiveConfigValue>>(
     return bound;
   }
 
-  function publish(live: T): void {
+  function publish(live: Config): void {
     pushShared(live);
     liveConfigRegistry().notify();
     broadcast(spec.id, live);
   }
 
-  function set<K extends keyof T>(key: K, value: T[K]): void {
+  function set<K extends keyof Config>(key: K, value: Config[K]): void {
     const live = get();
     live[key] = value;
     publish(live);
@@ -342,18 +347,18 @@ export function createLiveConfig<T extends Record<string, LiveConfigValue>>(
 
   function reset(): void {
     const live = get();
-    for (const key of Object.keys(defaults) as (keyof T)[]) live[key] = defaults[key];
+    for (const key of Object.keys(defaults) as (keyof Config)[]) live[key] = defaults[key];
     publish(live);
   }
 
-  const config = new Proxy({} as T, {
+  const config = new Proxy({} as Config, {
     get(_target, prop) {
       const live = get();
-      if (prop in live) return live[prop as keyof T];
-      return defaults[prop as keyof T];
+      if (prop in live) return live[prop as keyof Config];
+      return defaults[prop as keyof Config];
     },
     set(_target, prop, value) {
-      set(prop as keyof T, value as T[keyof T]);
+      set(prop as keyof Config, value as Config[keyof Config]);
       return true;
     },
     ownKeys() {
@@ -364,7 +369,7 @@ export function createLiveConfig<T extends Record<string, LiveConfigValue>>(
     },
   });
 
-  const handle: LiveConfigHandle<T> = {
+  const handle: LiveConfigHandle<Config> = {
     id: spec.id,
     title: spec.title,
     globalKey: spec.globalKey,
@@ -395,7 +400,7 @@ export function createLiveConfig<T extends Record<string, LiveConfigValue>>(
     defaults,
     fields,
     get,
-    set: (key, value) => set(key as keyof T, value as T[keyof T]),
+    set: (key, value) => set(key as keyof Config, value as Config[keyof Config]),
     reset,
   });
 

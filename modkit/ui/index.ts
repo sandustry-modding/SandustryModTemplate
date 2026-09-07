@@ -1,3 +1,5 @@
+export { ActionSlot, Panel, Button } from "./components/index";
+export type { ActionSlotProps, HotbarBankSource, PanelProps, ButtonProps } from "./components/index";
 export { HotkeyBadge } from "./badges/HotkeyBadge";
 export { UiBox } from "./panels/UiBox";
 export { InfoBanner } from "./panels/InfoBanner";

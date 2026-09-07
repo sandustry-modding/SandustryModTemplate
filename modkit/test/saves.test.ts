@@ -9,8 +9,9 @@ test("Empty.save fixture is a Void world with a gzip body", () => {
   const parsed = parseSaveFile(emptySaveFixturePath());
   assert.equal(typeof parsed.meta.id, "string");
   assert.ok(parsed.meta.id.length > 0);
-  assert.equal(typeof parsed.meta.name, "string");
-  assert.ok(parsed.meta.name.length > 0);
+  const name = parsed.meta.name;
+  assert.equal(typeof name, "string");
+  assert.ok(name && name.length > 0);
   assert.ok(parsed.data && typeof parsed.data === "object");
 });
 

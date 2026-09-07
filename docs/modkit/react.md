@@ -103,4 +103,14 @@ Put mod UI under `src/<name>/ui/`.
 Import components from `@modkit/ui` or local files.
 Register overlays with `api.ui.inject` from `src/<name>/main.ts`.
 
+Host widgets (`Button`, `Panel`, `ActionSlot`) wrap `api.ui.components` so you can write JSX instead of `sandkit.react.createElement`.
+
+```tsx
+import { Button, Panel } from "@modkit/ui";
+
+<Panel title="Options">
+  <Button onClick={openPanel}>Open</Button>
+</Panel>;
+```
+
 See [../ui/README.md](../ui/README.md) for shared UI components.
