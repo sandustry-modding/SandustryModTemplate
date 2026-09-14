@@ -226,7 +226,7 @@ When the user picks **Skip push**, continue only if they asked to publish from l
 ## Step 5 — Steam Workshop
 
 Requires cached SteamCMD login.
-See `docs/okf/kit/builds.md` and `docs/okf/kit/publishing.md`.
+See `docs/guides/publishing.md` and `docs/builds.md`.
 
 ### Gate E — Publish
 
