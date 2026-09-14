@@ -1,9 +1,9 @@
 # Rules
 
-Skills and `docs/` carry vanilla game and kit facts.
+`docs/` carries vanilla game and kit facts.
 `docs/` is a gitignored clone of [sandustry-modding.github.io](https://github.com/sandustry-modding/sandustry-modding.github.io).
 `npm run setup` creates it.
-Document new vanilla findings in a skill.
+Document new vanilla findings in `docs/okf/` matching the domain.
 
 ## Markdown prose
 
@@ -21,9 +21,9 @@ Its behavior, options, controls, and internals stay there.
 Official Sandkit signatures: `.tmp/Sandkit - Sandustry Modding API.html` or https://sandustry.com/sandkit.html.
 Do not invent APIs.
 
-Vanilla facts: Read `.cursor/skills/sandustry/SKILL.md`, then **one** domain `SKILL.md` from its table.
+After `npm run setup`, agents load `docs/llms.txt`, then `docs/okf/consume.md`, then **one** domain index.
 
-Live session: **sandustry-mcp**.
+Live session: `docs/okf/live/` plus MCP namespace `sandustry`.
 Do not kill Sandustry.
 Ask the user for a hard reload.
 
