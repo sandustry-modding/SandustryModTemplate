@@ -11,6 +11,7 @@
  *   sandustry/logs/       symlink (Linux) / junction (Windows) to OS sandustry logs
  *   sandustry/saves/      link to OS saves
  *   sandustry/workshop/   link to Steam Workshop content
+ *   docs/                 clone of sandustry-modding.github.io
  *                Linux: ~/.config/sandustry/logs
  *                Windows: %APPDATA%/sandustry/logs
  */
@@ -30,6 +31,7 @@ import {
 import { ensureAllModDebugSaves } from "../lib/debug-save.js";
 import { DEFAULT_MOD_ROOTS, discoverMods, loadMods } from "../lib/mods.js";
 import { syncLaunchDebugModPicker } from "../lib/sync-debug-mod-picker.js";
+import { ensureDocsRepo } from "../lib/docs-repo.js";
 import { ensureRepoDistLink } from "../lib/mod-path.js";
 import { SANDUSTRY, SANDUSTRY_DIR } from "../lib/sandustry-common.js";
 import {
@@ -370,6 +372,13 @@ console.log("Sandustry mod template setup");
 console.log("");
 
 ensureEnvFile();
+try {
+  ensureDocsRepo(ROOT);
+  ok("Docs site clone (docs/)");
+} catch (error) {
+  const message = error instanceof Error ? error.message : String(error);
+  fail(`Docs site clone: ${message}`);
+}
 checkNode();
 checkRootInstall();
 checkModPackageInstalls();
