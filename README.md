@@ -103,7 +103,7 @@ Shared code goes in `modkit/`.
 
 ### Docs
 
-- **`npm run docs`** — Clone the org docs site into `docs/` if needed, then serve Docsify
+- **`npm run docs`** — Clone the org docs site into `docs/` if needed, then serve it locally
 
 Build flags, Workshop upload, and Tailwind details: [Builds](https://sandustry-modding.github.io/#/builds).
 

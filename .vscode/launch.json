@@ -103,7 +103,7 @@
         "irishbruse.trees",
         "template"
       ],
-      "default": "irishbruse.selection-capture"
+      "default": "irishbruse.dev-tools"
     }
   ]
 }
