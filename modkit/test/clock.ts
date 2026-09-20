@@ -56,6 +56,8 @@ const CALL_MAX_TIMEOUT_MS = 600_000;
 /** Clamp-sized frames `prime` may run: 2000 of them cover 500 s of time debt. */
 const PRIME_FRAME_BUDGET = 2000;
 const PRIME_TIMEOUT_MS = 20_000;
+/** How long a pumped frame waits for its loop to ask for one. */
+const FRAME_REQUEST_TIMEOUT_MS = 10_000;
 
 export type ClockStatus = {
   installed: boolean;
@@ -75,6 +77,8 @@ export type StepResult = {
 type ManagerClockConfig = {
   /** Identifies this install, so an agent left over from an earlier one stays quiet. */
   token: string;
+  /** How long a pumped frame waits for the loop to ask for it. */
+  frameRequestTimeoutMs: number;
   /** How many catch-up frames `prime` may run before it gives up. */
   primeFrames: number;
   /** And how long it may spend running them. */
@@ -87,6 +91,7 @@ type ManagerClockConfig = {
 
 type RendererClockConfig = {
   token: string;
+  frameRequestTimeoutMs: number;
   stepMs: number;
   setPaused: number;
   setSimulationSpeed: number;
@@ -110,6 +115,102 @@ export function assertStepCount(count: number, label: string): void {
   }
 }
 
+/** A `requestAnimationFrame` loop, taken over and driven by hand. */
+type FramePump = {
+  /** Has a real frame arrived to hand over the timestamp the loop last saw? */
+  readonly armed: boolean;
+  /** Frames pumped so far. */
+  readonly frames: number;
+  /** Where the pump has moved the loop's clock to. */
+  readonly virtualMs: number;
+  /** Advance the clock by `advanceMs`, and run the frame the loop asked for. */
+  frame(advanceMs: number): Promise<void>;
+  /** Give the loop back to the browser, along with any frame it is waiting on. */
+  release(): void;
+};
+
+/**
+ * Take over `requestAnimationFrame` wherever this runs, and return the pump
+ * that drives it. The renderer and the manager worker each run one, and each
+ * builds its own agent around it.
+ *
+ * One real frame is let through first: the loop measures the gap to the
+ * timestamp it last saw, and only that frame can tell us what it was. Every
+ * callback after it is captured, and runs when a test says so.
+ *
+ * This function is copied into the page on its own, so `label` and the timeout
+ * arrive as arguments rather than from the module around it.
+ */
+function createFramePumpInPage(label: string, requestTimeoutMs: number): FramePump {
+  const scope = globalThis;
+  const realRequestAnimationFrame = scope.requestAnimationFrame;
+  let queue: FrameRequestCallback[] = [];
+  let armed = false;
+  let virtualMs = 0;
+  let frames = 0;
+
+  // The loop asks for its next frame once its own work settles, so a pump can
+  // arrive before the request does.
+  let waiting: (() => void) | null = null;
+  const capture = (callback: FrameRequestCallback) => {
+    queue.push(callback);
+    const resume = waiting;
+    waiting = null;
+    resume?.();
+    return queue.length;
+  };
+  scope.requestAnimationFrame = (callback: FrameRequestCallback) =>
+    realRequestAnimationFrame.call(scope, (time: number) => {
+      virtualMs = time;
+      scope.requestAnimationFrame = capture as typeof scope.requestAnimationFrame;
+      armed = true;
+      return callback(time);
+    });
+
+  const waitForRequest = () =>
+    queue.length > 0
+      ? Promise.resolve()
+      : new Promise<void>((resolve, reject) => {
+          const timer = setTimeout(
+            () => reject(new Error(`modkit clock (${label}): the loop asked for no frame`)),
+            requestTimeoutMs,
+          );
+          waiting = () => {
+            clearTimeout(timer);
+            resolve();
+          };
+        });
+
+  return {
+    get armed() {
+      return armed;
+    },
+    get frames() {
+      return frames;
+    },
+    get virtualMs() {
+      return virtualMs;
+    },
+    async frame(advanceMs: number): Promise<void> {
+      if (!armed) {
+        throw new Error(`modkit clock (${label}): no real frame arrived to arm the pump`);
+      }
+      await waitForRequest();
+      const due = queue;
+      queue = [];
+      virtualMs += advanceMs;
+      frames += 1;
+      await Promise.all(due.map((callback) => callback(virtualMs)));
+    },
+    release(): void {
+      scope.requestAnimationFrame = realRequestAnimationFrame;
+      const due = queue;
+      queue = [];
+      for (const callback of due) realRequestAnimationFrame.call(scope, callback);
+    },
+  };
+}
+
 /**
  * Installed in the manager worker. Owns the simulation clock: one pumped frame
  * advances the manager's accumulator by an exact multiple of its fixed step, so
@@ -125,12 +226,8 @@ function installManagerClock(config: ManagerClockConfig): string {
     addEventListener(type: "message", listener: (event: MessageEvent) => void): void;
     removeEventListener(type: "message", listener: (event: MessageEvent) => void): void;
   };
-  const realRequestAnimationFrame = scope.requestAnimationFrame;
+  const pump = createFramePumpInPage("manager", config.frameRequestTimeoutMs);
   const realPostMessage = MessagePort.prototype.postMessage;
-  let queue: FrameRequestCallback[] = [];
-  let armed = false;
-  let virtualMs = 0;
-  let frames = 0;
   let simTick = -1;
 
   // Every tick the manager posts one `RunTick` (or `RunUpdate`) per worker
@@ -146,50 +243,6 @@ function installManagerClock(config: ManagerClockConfig): string {
     }
     return (realPostMessage as (...a: unknown[]) => void).apply(this, args);
   } as MessagePort["postMessage"];
-
-  // The loop asks for its next frame after its own work settles, so a pump can
-  // arrive before the request does.
-  let waiting: (() => void) | null = null;
-  const capture = (callback: FrameRequestCallback) => {
-    queue.push(callback);
-    const resume = waiting;
-    waiting = null;
-    resume?.();
-    return queue.length;
-  };
-  // Let one real frame through first: it hands us the timestamp the manager's
-  // loop just recorded, so the first pumped frame has an exact delta.
-  scope.requestAnimationFrame = (callback: FrameRequestCallback) =>
-    realRequestAnimationFrame.call(scope, (time: number) => {
-      virtualMs = time;
-      scope.requestAnimationFrame = capture as typeof scope.requestAnimationFrame;
-      armed = true;
-      return callback(time);
-    });
-
-  const waitForRequest = (label: string) =>
-    queue.length > 0
-      ? Promise.resolve()
-      : new Promise<void>((resolve, reject) => {
-          const timer = setTimeout(
-            () => reject(new Error(`modkit clock (${label}): the loop asked for no frame`)),
-            10_000,
-          );
-          waiting = () => {
-            clearTimeout(timer);
-            resolve();
-          };
-        });
-
-  const frame = async (advanceMs: number): Promise<void> => {
-    if (!armed) throw new Error("modkit clock (manager): no real frame arrived to arm the pump");
-    await waitForRequest("manager");
-    const due = queue;
-    queue = [];
-    virtualMs += advanceMs;
-    frames += 1;
-    await Promise.all(due.map((callback) => callback(virtualMs)));
-  };
 
   /**
    * Run until the first tick, which establishes the counter to step from.
@@ -214,7 +267,7 @@ function installManagerClock(config: ManagerClockConfig): string {
             "paused, or the worker protocol ids in modkit/test/clock.ts no longer match this build.",
         );
       }
-      await frame(catchUpMs);
+      await pump.frame(catchUpMs);
     }
     return simTick;
   };
@@ -222,12 +275,12 @@ function installManagerClock(config: ManagerClockConfig): string {
   const runTicks = async (count: number): Promise<{ ticks: number; frames: number }> => {
     await prime();
     const startTick = simTick;
-    const startFrames = frames;
+    const startFrames = pump.frames;
     let stalled = 0;
     while (simTick - startTick < count) {
       const before = simTick;
       const remaining = count - (simTick - startTick);
-      await frame(Math.min(remaining, config.maxTicksPerFrame) * config.stepMs);
+      await pump.frame(Math.min(remaining, config.maxTicksPerFrame) * config.stepMs);
       if (simTick === before) {
         stalled += 1;
         if (stalled > 2) {
@@ -240,19 +293,22 @@ function installManagerClock(config: ManagerClockConfig): string {
         stalled = 0;
       }
     }
-    return { ticks: simTick - startTick, frames: frames - startFrames };
+    return { ticks: simTick - startTick, frames: pump.frames - startFrames };
   };
 
-  const status = () => ({ installed: true, armed, simTick, frames, virtualMs });
+  const status = () => ({
+    installed: true,
+    armed: pump.armed,
+    simTick,
+    frames: pump.frames,
+    virtualMs: pump.virtualMs,
+  });
 
   const uninstall = () => {
-    scope.requestAnimationFrame = realRequestAnimationFrame;
+    pump.release();
     MessagePort.prototype.postMessage = realPostMessage;
     // A listener left behind would answer for a later clock with stale numbers.
     worker.removeEventListener("message", onRequest);
-    const due = queue;
-    queue = [];
-    for (const callback of due) realRequestAnimationFrame.call(scope, callback);
     delete scope.__modkitClock;
     return "uninstalled";
   };
@@ -281,7 +337,7 @@ function installManagerClock(config: ManagerClockConfig): string {
   };
   worker.addEventListener("message", onRequest);
 
-  scope.__modkitClock = { frame, prime, runTicks, status, uninstall };
+  scope.__modkitClock = { frame: pump.frame, prime, runTicks, status, uninstall };
   return "installed";
 }
 
@@ -299,43 +355,7 @@ function installRendererClock(config: RendererClockConfig): string {
   };
   const state = () => sandkit.engine.state as unknown as RendererState;
 
-  const realRequestAnimationFrame = scope.requestAnimationFrame;
-  let queue: FrameRequestCallback[] = [];
-  let armed = false;
-  let virtualMs = 0;
-  let frames = 0;
-
-  // The frame loop asks for its next frame after its own work settles, so a pump
-  // can arrive before the request does.
-  let waiting: (() => void) | null = null;
-  const capture = (callback: FrameRequestCallback) => {
-    queue.push(callback);
-    const resume = waiting;
-    waiting = null;
-    resume?.();
-    return queue.length;
-  };
-  scope.requestAnimationFrame = (callback: FrameRequestCallback) =>
-    realRequestAnimationFrame.call(scope, (time: number) => {
-      virtualMs = time;
-      scope.requestAnimationFrame = capture as typeof scope.requestAnimationFrame;
-      armed = true;
-      return callback(time);
-    });
-
-  const waitForRequest = () =>
-    queue.length > 0
-      ? Promise.resolve()
-      : new Promise<void>((resolve, reject) => {
-          const timer = setTimeout(
-            () => reject(new Error("modkit clock (renderer): the frame loop asked for no frame")),
-            10_000,
-          );
-          waiting = () => {
-            clearTimeout(timer);
-            resolve();
-          };
-        });
+  const pump = createFramePumpInPage("renderer", config.frameRequestTimeoutMs);
 
   // The frame loop skips its whole update while `paused`, and skips frames that
   // arrive faster than the cap. Both would swallow pumped frames.
@@ -346,16 +366,6 @@ function installRendererClock(config: RendererClockConfig): string {
   const manager = () => state().environment.multithreading.simulation.manager;
   state().session.paused = false;
   state().session.settings.frameRateCap = 0;
-
-  const frame = async (advanceMs: number): Promise<void> => {
-    if (!armed) throw new Error("modkit clock (renderer): no real frame arrived to arm the pump");
-    await waitForRequest();
-    const due = queue;
-    queue = [];
-    virtualMs += advanceMs;
-    frames += 1;
-    await Promise.all(due.map((callback) => callback(virtualMs)));
-  };
 
   let nextId = 1;
   const inflight = new Map<
@@ -394,7 +404,7 @@ function installRendererClock(config: RendererClockConfig): string {
     (await callManager("ticks", count)) as { ticks: number; frames: number };
 
   const renderFrames = async (count: number) => {
-    for (let index = 0; index < count; index += 1) await frame(config.stepMs);
+    for (let index = 0; index < count; index += 1) await pump.frame(config.stepMs);
     return { frames: count, ticks: 0 };
   };
 
@@ -403,7 +413,7 @@ function installRendererClock(config: RendererClockConfig): string {
     const startedAt = performance.now();
     let ran = 0;
     for (let index = 0; index < count; index += 1) {
-      await frame(config.stepMs);
+      await pump.frame(config.stepMs);
       ran += (await simTicks(1)).ticks;
       if (!paceToWallClock) continue;
       const due = startedAt + (index + 1) * config.stepMs - performance.now();
@@ -419,9 +429,9 @@ function installRendererClock(config: RendererClockConfig): string {
     };
     return {
       installed: true,
-      armed: armed && managerStatus.armed,
+      armed: pump.armed && managerStatus.armed,
       simTick: managerStatus.simTick,
-      frames,
+      frames: pump.frames,
     };
   };
 
@@ -429,20 +439,24 @@ function installRendererClock(config: RendererClockConfig): string {
     await callManager("uninstall", undefined, config.answerTimeoutMs).catch(() => undefined);
     // A listener left behind would answer for a later clock with stale numbers.
     manager().removeEventListener("message", onAnswer);
-    scope.requestAnimationFrame = realRequestAnimationFrame;
-    state().session.paused = prior.paused;
-    manager().postMessage([config.setPaused, prior.paused]);
+    pump.release();
+    pauseEngineInPage(prior.paused, config.setPaused);
     if (typeof prior.frameRateCap === "number") {
       state().session.settings.frameRateCap = prior.frameRateCap;
     }
-    const due = queue;
-    queue = [];
-    for (const callback of due) realRequestAnimationFrame.call(scope, callback);
     delete scope.__modkitClock;
     return "uninstalled";
   };
 
-  scope.__modkitClock = { frame, prime, ticks, simTicks, renderFrames, status, uninstall };
+  scope.__modkitClock = {
+    frame: pump.frame,
+    prime,
+    ticks,
+    simTicks,
+    renderFrames,
+    status,
+    uninstall,
+  };
   return "installed";
 }
 
@@ -549,30 +563,40 @@ export class SimulationClock {
     const manager = await this.cdp.workerSession("manager-worker");
     const token = `modkit-clock-${randomUUID()}`;
     await this.cdp.evaluate(
-      toPageExpression(installManagerClock, [
-        {
-          token,
-          primeFrames: PRIME_FRAME_BUDGET,
-          primeTimeoutMs: PRIME_TIMEOUT_MS,
-          runTick: WORKER_MESSAGE.RunTick,
-          runUpdate: WORKER_MESSAGE.RunUpdate,
-          stepMs: SIMULATION_STEP_MS,
-          maxTicksPerFrame: MAX_TICKS_PER_FRAME,
-        } satisfies ManagerClockConfig,
-      ]),
+      toPageExpression(
+        installManagerClock,
+        [
+          {
+            token,
+            frameRequestTimeoutMs: FRAME_REQUEST_TIMEOUT_MS,
+            primeFrames: PRIME_FRAME_BUDGET,
+            primeTimeoutMs: PRIME_TIMEOUT_MS,
+            runTick: WORKER_MESSAGE.RunTick,
+            runUpdate: WORKER_MESSAGE.RunUpdate,
+            stepMs: SIMULATION_STEP_MS,
+            maxTicksPerFrame: MAX_TICKS_PER_FRAME,
+          } satisfies ManagerClockConfig,
+        ],
+        { include: [createFramePumpInPage] },
+      ),
       { sessionId: manager.sessionId },
     );
     await this.cdp.evaluate(
-      toPageExpression(installRendererClock, [
-        {
-          token,
-          stepMs: SIMULATION_STEP_MS,
-          setPaused: WORKER_MESSAGE.SetPaused,
-          setSimulationSpeed: WORKER_MESSAGE.SetSimulationSpeed,
-          callTimeoutMs: CALL_MAX_TIMEOUT_MS,
-          answerTimeoutMs: CALL_BASE_TIMEOUT_MS,
-        } satisfies RendererClockConfig,
-      ]),
+      toPageExpression(
+        installRendererClock,
+        [
+          {
+            token,
+            frameRequestTimeoutMs: FRAME_REQUEST_TIMEOUT_MS,
+            stepMs: SIMULATION_STEP_MS,
+            setPaused: WORKER_MESSAGE.SetPaused,
+            setSimulationSpeed: WORKER_MESSAGE.SetSimulationSpeed,
+            callTimeoutMs: CALL_MAX_TIMEOUT_MS,
+            answerTimeoutMs: CALL_BASE_TIMEOUT_MS,
+          } satisfies RendererClockConfig,
+        ],
+        { include: [pauseEngineInPage, createFramePumpInPage] },
+      ),
     );
     this.installed = true;
     await this.waitUntilArmed();

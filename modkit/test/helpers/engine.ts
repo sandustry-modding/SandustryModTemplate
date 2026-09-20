@@ -3,7 +3,7 @@
  *
  * These run in the renderer, serialized by `toPageExpression`, so each one has
  * to stand on its own: page globals and its own arguments, nothing from this
- * module.
+ * module. Callers that are themselves serialized pass them through `include`.
  */
 
 /**
