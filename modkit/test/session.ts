@@ -2,6 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { CdpConnection, type ScreenshotClip } from "./cdp.ts";
+import { SimulationClock, type ClockStatus, type StepResult } from "./clock.ts";
 import { installedModFile, tryReadInstalledModFile, tryReadInstalledModMain } from "./paths.ts";
 import {
   formatRendererReadySnapshot,
@@ -34,6 +35,8 @@ export type ModMainFile = {
 
 export type SessionWaitForOptions<TArgs extends unknown[] = unknown[]> = WaitForOptions & {
   args?: TArgs;
+  /** Steps run between polls while the clock is installed. Default 1. */
+  ticksPerPoll?: number;
 };
 
 export type {
@@ -59,8 +62,12 @@ const SCREENSHOT_MASK_ID = "__modkit-screenshot-mask";
 export class SandustrySession {
   private readonly cdp: CdpConnection;
 
+  /** Steps frames and simulation ticks instead of waiting on wall-clock time. */
+  readonly clock: SimulationClock;
+
   private constructor(cdp: CdpConnection) {
     this.cdp = cdp;
+    this.clock = new SimulationClock(cdp);
   }
 
   static async connect(options?: { port?: string; timeoutMs?: number }): Promise<SandustrySession> {
@@ -114,6 +121,9 @@ export class SandustrySession {
 
   /**
    * Poll a page function until `match` is true. `match` runs in Node.
+   *
+   * Under the stepped clock nothing changes on its own, so each poll steps the
+   * game by `ticksPerPoll` (default 1) instead of sleeping.
    */
   async waitFor<TArgs extends unknown[], T>(
     read: (...args: TArgs) => T | Promise<T>,
@@ -121,7 +131,42 @@ export class SandustrySession {
     options?: SessionWaitForOptions<TArgs>,
   ): Promise<T> {
     const pageArgs = (options?.args ?? []) as TArgs;
-    return waitFor(() => this.evaluate(read, ...pageArgs), match, options);
+    const stepped = await this.clock.isInstalled();
+    return waitFor(() => this.evaluate(read, ...pageArgs), match, {
+      ...options,
+      ...(stepped
+        ? {
+            onRetry: async () => {
+              await this.clock.ticks(options?.ticksPerPoll ?? 1);
+            },
+          }
+        : {}),
+    });
+  }
+
+  /** Step `count` renderer frames, each followed by one simulation tick. */
+  async ticks(count: number): Promise<StepResult> {
+    return this.clock.ticks(count);
+  }
+
+  /** Step the simulation only. The renderer does not advance. */
+  async simTicks(count: number): Promise<StepResult> {
+    return this.clock.simTicks(count);
+  }
+
+  /** Step the renderer only. It hands queued world writes on; a tick applies them. */
+  async renderFrames(count: number): Promise<StepResult> {
+    return this.clock.renderFrames(count);
+  }
+
+  /** Seed `Math.random` everywhere the game runs, so a scenario repeats. */
+  async seed(value?: number): Promise<void> {
+    await this.clock.seed(value);
+  }
+
+  /** Frames pumped, ticks run, and whether the clock owns the game. */
+  async clockStatus(): Promise<ClockStatus> {
+    return this.clock.status();
   }
 
   /** Build several structures in one renderer turn and wait for their anchors. */
@@ -134,8 +179,12 @@ export class SandustrySession {
     await buildLayout(this, layout);
   }
 
-  /** Pause or resume the simulation without opening the in-game pause UI. */
+  /**
+   * Pause or resume the simulation without opening the in-game pause UI.
+   * A no-op under the stepped clock, which already owns when the game advances.
+   */
   async setSimulationPaused(paused: boolean): Promise<void> {
+    if (await this.clock.isInstalled()) return;
     await setSimulationPaused(this, paused);
   }
 
@@ -147,8 +196,18 @@ export class SandustrySession {
     await this.setSimulationPaused(false);
   }
 
-  /** Run the simulation for a wall-clock interval, then restore its prior state. */
+  /**
+   * Run the simulation for a wall-clock interval, then restore its prior state.
+   *
+   * Prefer `ticks()`: a wall-clock duration is a race against the host machine's
+   * scheduler, and the same test can pass on a workstation and fail on CI. Under
+   * the stepped clock this hands the game back to real time for the duration.
+   */
   async runSimulation(durationMs: number): Promise<void> {
+    if (await this.clock.isInstalled()) {
+      await this.clock.withRealTime(durationMs);
+      return;
+    }
     await runSimulation(this, durationMs);
   }
 

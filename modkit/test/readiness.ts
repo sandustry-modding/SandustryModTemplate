@@ -60,13 +60,3 @@ export function formatRendererReadySnapshot(snapshot: RendererReadySnapshot): st
     return String(snapshot);
   }
 }
-
-/** Runs in the renderer via CDP. Freezes the sim between integration tests. */
-export function pauseRendererSim(): void {
-  const session = (
-    globalThis as typeof globalThis & {
-      sandkit?: { engine?: { state?: { session?: { paused?: boolean } } } };
-    }
-  ).sandkit?.engine?.state?.session;
-  if (session) session.paused = true;
-}

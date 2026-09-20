@@ -1,3 +1,6 @@
+import { WORKER_MESSAGE } from "../clock.ts";
+import { pauseEngineInPage } from "./engine.ts";
+
 export type StructurePlacement = {
   type: string | number;
   x: number;
@@ -249,15 +252,7 @@ export async function buildLayout(session: WorldSession, layout: StructureLayout
 
 /** Pause or resume the simulation without opening the in-game pause UI. */
 export async function setSimulationPaused(session: WorldSession, paused: boolean): Promise<void> {
-  await session.evaluate((nextPaused: boolean) => {
-    const state = (
-      globalThis as typeof globalThis & {
-        sandkit?: { engine?: { state?: { session?: { paused?: boolean } } } };
-      }
-    ).sandkit?.engine?.state?.session;
-    if (!state) throw new Error("Sandustry session state is unavailable");
-    state.paused = nextPaused;
-  }, paused);
+  await session.evaluate(pauseEngineInPage, paused, WORKER_MESSAGE.SetPaused);
 }
 
 export async function pauseSimulation(session: WorldSession): Promise<void> {
