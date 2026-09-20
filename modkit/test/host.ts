@@ -14,6 +14,8 @@ import { fileURLToPath } from "node:url";
 import { setTimeout as sleep } from "node:timers/promises";
 import type { ChildProcess } from "node:child_process";
 import { isSandustryAvailable, CdpConnection } from "./cdp.ts";
+import { WORKER_MESSAGE } from "./clock.ts";
+import { pauseEngineInPage } from "./helpers/engine.ts";
 import { spawnChrome, stopChild, resolveChrome } from "./chrome.ts";
 import { rewriteAssetJoinForHttp } from "./asset-join.ts";
 import { companionSettings, copyTestMods, listWorkshopMods } from "./mods.ts";
@@ -33,7 +35,6 @@ import {
   GAME_READY_POLL_MS,
   GAME_READY_TIMEOUT_MS,
   isRendererReady,
-  pauseRendererSim,
   readRendererReadySnapshot,
 } from "./readiness.ts";
 import { parseSaveFile, readSaveMetaLine, installEmptySave } from "./saves.ts";
@@ -360,7 +361,7 @@ async function waitForGameReady(options?: { visible?: boolean }): Promise<boolea
       lastSnapshot = formatRendererReadySnapshot(snapshot);
       if (isRendererReady(snapshot)) {
         await cdp.lockViewport({ visible: options?.visible === true });
-        await cdp.evaluate(toPageExpression(pauseRendererSim));
+        await cdp.evaluate(toPageExpression(pauseEngineInPage, [true, WORKER_MESSAGE.SetPaused]));
         cdp.close();
         return true;
       }

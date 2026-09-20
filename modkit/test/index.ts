@@ -7,6 +7,16 @@ if (typeof globalThis.document !== "undefined") {
 }
 
 export { SANDUSTRY_CDP_PORT, isSandustryAvailable } from "./cdp.ts";
+export type { AttachedWorker } from "./cdp.ts";
+export {
+  DEFAULT_SEED,
+  DEFAULT_SETTLE_TICKS,
+  MAX_TICKS_PER_FRAME,
+  SIMULATION_STEP_MS,
+  SimulationClock,
+  WORKER_MESSAGE,
+} from "./clock.ts";
+export type { ClockStatus, StepResult } from "./clock.ts";
 export { startSandustryTestHost, stopSandustryTestHost } from "./host.ts";
 export type { HostStartResult, HostWindowMode } from "./host.ts";
 export {

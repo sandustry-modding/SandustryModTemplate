@@ -2,6 +2,8 @@ export type WaitForOptions = {
   timeoutMs?: number;
   intervalMs?: number;
   message?: string;
+  /** Runs between polls in place of the interval sleep. Used to step the clock. */
+  onRetry?: () => Promise<void>;
 };
 
 export const WAIT_FOR_TIMEOUT_MS = 8000;
@@ -25,7 +27,8 @@ export async function waitFor<T>(
     if (match(last)) return last;
     const remaining = deadline - Date.now();
     if (remaining <= 0) break;
-    await new Promise((resolve) => setTimeout(resolve, Math.min(intervalMs, remaining)));
+    if (options?.onRetry) await options.onRetry();
+    else await new Promise((resolve) => setTimeout(resolve, Math.min(intervalMs, remaining)));
   }
   const label = options?.message ?? "waitFor timed out";
   throw new Error(`${label}: last value ${stringifyLast(last)}`);
