@@ -5,7 +5,7 @@ import { expect, setupGame } from "@modkit/test";
 const game = await setupGame();
 
 /** Void `Empty.save` spawn (world pixels). Keeps the smoke shot stable across the suite. */
-const VOID_SPAWN = { x: 7881, y: 6434 };
+const VOID_SPAWN = { x: 2042, y: 2018 };
 
 test("Game scene exposes sandkit.api", async () => {
   const state = await game.evaluate(() => {
