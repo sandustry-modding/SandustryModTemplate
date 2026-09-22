@@ -12,6 +12,7 @@
  *   sandustry/saves/      link to OS saves
  *   sandustry/workshop/   link to Steam Workshop content
  *   docs/                 clone of sandustry-modding.github.io
+ *   SandustryTypes/       clone of sandustry-modding/SandustryTypes (linked as @sandustry-modding/types)
  *                Linux: ~/.config/sandustry/logs
  *                Windows: %APPDATA%/sandustry/logs
  */
@@ -32,6 +33,7 @@ import { ensureAllModDebugSaves } from "../lib/debug-save.js";
 import { DEFAULT_MOD_ROOTS, discoverMods, loadMods } from "../lib/mods.js";
 import { syncLaunchDebugModPicker } from "../lib/sync-debug-mod-picker.js";
 import { ensureDocsRepo } from "../lib/docs-repo.js";
+import { ensureTypesRepo, syncTypesRepo } from "../lib/types-repo.js";
 import { ensureRepoDistLink } from "../lib/mod-path.js";
 import { SANDUSTRY, SANDUSTRY_DIR } from "../lib/sandustry-common.js";
 import {
@@ -111,11 +113,20 @@ function checkNode() {
 function checkRootInstall() {
   const esbuild = join(ROOT, "node_modules/esbuild");
   const asar = join(ROOT, "node_modules/@electron/asar");
-  if (existsSync(esbuild) && existsSync(asar)) {
-    ok("Root npm packages (esbuild, @electron/asar)");
+  const typesLink = join(ROOT, "node_modules/@sandustry-modding/types");
+  const typesLocal = join(ROOT, "SandustryTypes/package.json");
+  const missing = [];
+  if (!existsSync(esbuild)) missing.push("esbuild");
+  if (!existsSync(asar)) missing.push("@electron/asar");
+  if (!existsSync(typesLocal)) missing.push("SandustryTypes/ (git clone)");
+  if (!existsSync(typesLink)) missing.push("@sandustry-modding/types (npm link)");
+  if (missing.length === 0) {
+    ok("Root npm packages (esbuild, @electron/asar, local @sandustry-modding/types)");
     return;
   }
-  fail("Root node_modules is incomplete. Run npm install in the repo root.");
+  fail(
+    `Root node_modules is incomplete (${missing.join(", ")}). Run npm install in the repo root.`,
+  );
 }
 
 function checkModPackageInstalls() {
@@ -378,6 +389,19 @@ try {
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
   fail(`Docs site clone: ${message}`);
+}
+try {
+  ensureTypesRepo(ROOT);
+  const sync = syncTypesRepo(ROOT);
+  if (sync.ok) {
+    ok("Sandkit types clone (SandustryTypes/, synced to origin/main)");
+  } else {
+    warn(`Sandkit types clone: ${sync.message ?? "could not sync"}`);
+    ok("Sandkit types clone (SandustryTypes/)");
+  }
+} catch (error) {
+  const message = error instanceof Error ? error.message : String(error);
+  fail(`Sandkit types clone: ${message}`);
 }
 checkNode();
 checkRootInstall();

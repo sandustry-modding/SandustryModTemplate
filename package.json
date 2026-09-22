@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "preinstall": "node scripts/setup/ensure-types-repo.js",
     "setup": "node scripts/setup/setup.js",
     "build": "node scripts/build/esbuild.config.mjs",
     "dev": "node scripts/dev/dev.js",
@@ -21,7 +22,7 @@
   },
   "devDependencies": {
     "@electron/asar": "^4.3.0",
-    "@sandustry-modding/types": "^0.7.0",
+    "@sandustry-modding/types": "file:SandustryTypes",
     "@types/node": "^26.3.0",
     "@types/pngjs": "^6.0.5",
     "@types/react": "^18.3.1",

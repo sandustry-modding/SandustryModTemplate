@@ -19,7 +19,10 @@ Use root `README.md` and `docs/modkit/` for the mod template — not OKF.
 Do not invent Sandkit APIs.
 Official signatures: `.tmp/Sandkit - Sandustry Modding API.html` or https://sandustry.com/sandkit.html.
 
-[SandustryTypes](https://github.com/sandustry-modding/SandustryTypes) follows the same game-only rule.
+[SandustryTypes](https://github.com/sandustry-modding/SandustryTypes) is a gitignored clone at `SandustryTypes/`.
+`npm install` creates it when missing.
+`npm run setup` fast-forwards `origin/main`.
+The template links it as `@sandustry-modding/types` (`file:SandustryTypes`), not the npm registry package.
 See `SandustryTypes/AGENTS.md` when you edit that clone.
 
 ## Live game

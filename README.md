@@ -13,7 +13,7 @@ Kit and API pages: [docs site](https://sandustry-modding.github.io/).
 
 - **Multi-mod** — One repo, many mods.
   Each `src/<name>/` or cloned `examples/<name>/` with a `modinfo.ts` builds to its own game folder.
-- **[TypeScript](https://sandustry-modding.github.io/#/search)** — Sandkit API types (`@sandustry-modding/types`)
+- **[TypeScript](https://sandustry-modding.github.io/#/search)** — Sandkit API types from a local [SandustryTypes](https://github.com/sandustry-modding/SandustryTypes) clone (`@sandustry-modding/types`)
 - **[React HUD](https://sandustry-modding.github.io/#/modkit/react)** — JSX via `sandkit.react`, plus the [UI kit gallery](https://sandustry-modding.github.io/#/ui/)
 - **[Watch rebuild](https://sandustry-modding.github.io/#/builds)** — `npm run dev` writes `main.js` to the game mods folder
 - **[Typed `modinfo.ts`](https://sandustry-modding.github.io/#/modinfo)** — Manifest fields.
@@ -61,7 +61,7 @@ Restart the game for workers and patches.
 1. Open `src/template/`.
 2. Set `id`, `name`, and `author` in `modinfo.json` ([field list](https://sandustry-modding.github.io/#/modinfo)).
 3. Edit `main.ts`.
-  Put extra source in feature folders, not next to `main.ts`.
+   Put extra source in feature folders, not next to `main.ts`.
 4. Copy `src/template/` to `src/<your-mod>/` when you want a second mod.
 
 Do not import files from another mod folder.
@@ -113,22 +113,27 @@ Each `src/<name>/`, `mods/<name>/`, or `examples/<name>/` folder with a `modinfo
 Put shared code in `modkit/`.
 Do not import files from another mod folder.
 
-| Path                  | What it is                                                     |
-| --------------------- | -------------------------------------------------------------- |
-| `src/<name>/`         | Your mod (`modinfo.json` + `main.ts`)                          |
-| `mods/<name>/`        | Optional private mods (gitignored)                             |
-| `examples/<name>/`    | Sample mods (cloned, gitignored)                               |
-| `docs/`               | Clone of [sandustry-modding.github.io](https://github.com/sandustry-modding/sandustry-modding.github.io) (gitignored) |
-| `modkit/`             | Shared kit. Import as `@modkit/*`                              |
-| `dist/`               | Link to the Sandustry mods folder on disk                      |
-| `build/<modinfo.id>/` | Workshop staging (copied on `npm run build`)                   |
-| `sandustry/`          | Local game extract and OS folder links (gitignored; see below) |
+| Path                  | What it is                                                                                                                        |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `src/<name>/`         | Your mod (`modinfo.json` + `main.ts`)                                                                                             |
+| `mods/<name>/`        | Optional private mods (gitignored)                                                                                                |
+| `examples/<name>/`    | Sample mods (cloned, gitignored)                                                                                                  |
+| `docs/`               | Clone of [sandustry-modding.github.io](https://github.com/sandustry-modding/sandustry-modding.github.io) (gitignored)             |
+| `SandustryTypes/`     | Clone of [SandustryTypes](https://github.com/sandustry-modding/SandustryTypes) (gitignored). Linked as `@sandustry-modding/types` |
+| `modkit/`             | Shared kit. Import as `@modkit/*`                                                                                                 |
+| `dist/`               | Link to the Sandustry mods folder on disk                                                                                         |
+| `build/<modinfo.id>/` | Workshop staging (copied on `npm run build`)                                                                                      |
+| `sandustry/`          | Local game extract and OS folder links (gitignored; see below)                                                                    |
 
 `mods/` is optional and gitignored, with the same `modinfo` rules as `src/`. `npm run build`, `npm run dev`, and `npm run publish` include it.
 `examples/` is gitignored.
 `npm run examples` clones [SandustryExamples](https://github.com/sandustry-modding/SandustryExamples) into that folder when it is missing.
 `docs/` is gitignored.
 `npm run setup` (and `npm run docs`) clones [sandustry-modding.github.io](https://github.com/sandustry-modding/sandustry-modding.github.io) into that folder when it is missing.
+`SandustryTypes/` is gitignored.
+`npm install` clones [SandustryTypes](https://github.com/sandustry-modding/SandustryTypes) when it is missing.
+`npm run setup` fast-forwards that clone to `origin/main`.
+The template does not use the npm registry package for types.
 This repo also ignores `src/irishbruse.*/`; those mods keep their own repos (`README.md` and `CHANGELOG.md` in that repo).
 
 The game folder and Workshop staging use the `id` field in `modinfo.json`, not the repo folder name or display `name`.
@@ -144,12 +149,12 @@ You do not copy files into the game folder by hand. `npm run dev` and `npm run b
 It is gitignored.
 Do not edit it by hand; run setup again after a game update.
 
-| Path                  | What it is                                                                                                                                                                                                                                                                     |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Path                  | What it is                                                                                                                                                                                                                                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `sandustry/source/`   | Extract of `app.asar` (except `node_modules/`). Refreshed on every setup. Read `package.json` for the game version. Use `dist/js/bundle.js` (or `.formatted-source/bundle.js` when present) for [patch](https://sandustry-modding.github.io/#/patches) `find` strings. Integration tests boot `source/dist`. |
-| `sandustry/logs/`     | Link to OS Sandustry logs (`main.log`, …)                                                                                                                                                                                                                                      |
-| `sandustry/saves/`    | Link to OS save files                                                                                                                                                                                                                                                          |
-| `sandustry/workshop/` | Link to Steam Workshop content for app **2764460**                                                                                                                                                                                                                             |
+| `sandustry/logs/`     | Link to OS Sandustry logs (`main.log`, …)                                                                                                                                                                                                                                                                    |
+| `sandustry/saves/`    | Link to OS save files                                                                                                                                                                                                                                                                                        |
+| `sandustry/workshop/` | Link to Steam Workshop content for app **2764460**                                                                                                                                                                                                                                                           |
 
 Older `sandustry/<version>-<branch>/` folders from prior template versions are removed on the next setup.
 
@@ -179,11 +184,11 @@ Mods in `src/` that ship with this template:
 
 Every mod under `src/<name>/`, `mods/<name>/`, or `examples/<name>/` needs these files:
 
-| File           | Role                                                                                  |
-| -------------- | ------------------------------------------------------------------------------------- |
-| `modinfo.json` | JSON manifest with `$schema` for IDE validation. See [Mod manifest](https://sandustry-modding.github.io/#/modinfo)  |
-| `modinfo.ts`   | TypeScript manifest (`defineModInfo` or `modinfoFromJson`). Optional patch re-exports |
-| `main.ts`      | Mod entry                                                                             |
+| File           | Role                                                                                                               |
+| -------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `modinfo.json` | JSON manifest with `$schema` for IDE validation. See [Mod manifest](https://sandustry-modding.github.io/#/modinfo) |
+| `modinfo.ts`   | TypeScript manifest (`defineModInfo` or `modinfoFromJson`). Optional patch re-exports                              |
+| `main.ts`      | Mod entry                                                                                                          |
 
 The repo has one [`tsconfig.json`](tsconfig.json).
 TypeScript checks `modkit/`, `src/`, `examples/`, and `mods/` together (`moduleDetection` is `force` so script-style `main.ts` files do not clash).
@@ -195,17 +200,17 @@ Put other source files in feature folders (`ui/`, `health/`, `capture/`, …).
 
 Add these when you need them:
 
-| File                         | Role                                                                                      |
-| ---------------------------- | ----------------------------------------------------------------------------------------- |
-| `worker.ts`                  | Worker entry at the mod root. The build writes `worker.js`                                |
-| `patches.json`               | Optional patch list (JSON array). See [Patches](https://sandustry-modding.github.io/#/patches).                         |
-| `patches.ts`                 | Optional patch list (`definePatches`). See [Patches](https://sandustry-modding.github.io/#/patches).                    |
-| `ui/`                        | React overlays                                                                            |
-| Feature folders              | Other source files (`health/`, `capture/`, …). Keep tests next to the file they test      |
-| `mod/`                       | Static files copied into the output folder.                                               |
-| `package.json`               | Optional. npm packages for this mod only. Run `npm install` in that folder yourself       |
-| `README.md` / `CHANGELOG.md` | Player docs and Steam notes. Publish reads `CHANGELOG.md`; builds do not copy these files |
-| `workshop/`                  | Workshop assets (`workshop.json`, previews, `workshop.md`, `screenshots/`)                |
+| File                         | Role                                                                                                 |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `worker.ts`                  | Worker entry at the mod root. The build writes `worker.js`                                           |
+| `patches.json`               | Optional patch list (JSON array). See [Patches](https://sandustry-modding.github.io/#/patches).      |
+| `patches.ts`                 | Optional patch list (`definePatches`). See [Patches](https://sandustry-modding.github.io/#/patches). |
+| `ui/`                        | React overlays                                                                                       |
+| Feature folders              | Other source files (`health/`, `capture/`, …). Keep tests next to the file they test                 |
+| `mod/`                       | Static files copied into the output folder.                                                          |
+| `package.json`               | Optional. npm packages for this mod only. Run `npm install` in that folder yourself                  |
+| `README.md` / `CHANGELOG.md` | Player docs and Steam notes. Publish reads `CHANGELOG.md`; builds do not copy these files            |
+| `workshop/`                  | Workshop assets (`workshop.json`, previews, `workshop.md`, `screenshots/`)                           |
 
 ### What you import
 
@@ -221,11 +226,12 @@ Import `@modkit/*` and files in your own folder only.
 | `@modkit/ui`                                  | Shared React UI components                                                               |
 | `sandkit` / `SandkitApi` / `WorkerSandkitApi` | Ambient globals. Do not import with a `types/` prefix                                    |
 
-Sandkit API types come from [`@sandustry-modding/types`](https://www.npmjs.com/package/@sandustry-modding/types).
+Sandkit API types come from the local `SandustryTypes/` clone, npm-linked as `@sandustry-modding/types` (`file:SandustryTypes` in root `package.json`).
 Browse the reference at [Sandustry Modding docs](https://sandustry-modding.github.io/#/search).
 Ambient `sandkit` loads through [`modkit/sandkit.d.ts`](modkit/sandkit.d.ts).
 Do not list this package under `compilerOptions.types`.
 Manifest and patch schemas: `@sandustry-modding/types/configs`.
+To pin types work to a branch or fork, check out that ref inside `SandustryTypes/`, then run `npm install` again.
 
 ## Troubleshooting
 
@@ -269,18 +275,18 @@ Default probe includes `%ProgramFiles(x86)%\Steam` and `%ProgramFiles%\Steam`, p
 Set `SANDUSTRY_MONITOR` in `.env` (see `.env.example`).
 `npm run sandustry` and F5 use the same setting.
 
-| Value     | Meaning                                      |
-| --------- | -------------------------------------------- |
-| `primary` | OS primary display (default)                 |
-| `left`    | Leftmost display                             |
-| `right`   | Rightmost display                            |
+| Value     | Meaning                                          |
+| --------- | ------------------------------------------------ |
+| `primary` | OS primary display (default)                     |
+| `left`    | Leftmost display                                 |
+| `right`   | Rightmost display                                |
 | `0`, `1`… | Index after sorting left-to-right, top-to-bottom |
 
-| OS      | Monitor placement | How                                    |
-| ------- | ----------------- | -------------------------------------- |
-| Linux   | Yes               | `xrandr` list; `wmctrl` maximize (F5)   |
+| OS      | Monitor placement | How                                      |
+| ------- | ----------------- | ---------------------------------------- |
+| Linux   | Yes               | `xrandr` list; `wmctrl` maximize (F5)    |
 | Windows | Yes               | PowerShell `Screen`; `--start-maximized` |
-| macOS   | No                | Falls back to `0,0`                    |
+| macOS   | No                | Falls back to `0,0`                      |
 
 **Duplicate mods in the console** — After a rename, old folders can stay in the OS mods directory.
 The game loads every folder there, so you get two copies of each sample.
@@ -314,19 +320,20 @@ See [Workshop publish](https://sandustry-modding.github.io/#/builds?id=workshop-
 On a TTY, publish prompts for password / Steam Guard once, then uploads.
 Full SteamCMD output is in `.tmp/steamcmd-publish.log`.
 
-**Types missing** — Run `npm install`.
-Sandkit API declarations come from `@sandustry-modding/types`.
+**Types missing** — Run `npm install` (creates `SandustryTypes/` when needed).
+Then run `npm run setup` to sync types to the latest `main` on GitHub.
+Sandkit API declarations resolve to `SandustryTypes/` through `@sandustry-modding/types`.
 See [Sandustry Modding docs](https://sandustry-modding.github.io/#/search).
 
 ## More docs
 
-| Topic              | Page                                                  |
-| ------------------ | ----------------------------------------------------- |
-| Builds and publish | [builds](https://sandustry-modding.github.io/#/builds) |
-| Mod manifest       | [modinfo](https://sandustry-modding.github.io/#/modinfo) |
+| Topic              | Page                                                                 |
+| ------------------ | -------------------------------------------------------------------- |
+| Builds and publish | [builds](https://sandustry-modding.github.io/#/builds)               |
+| Mod manifest       | [modinfo](https://sandustry-modding.github.io/#/modinfo)             |
 | `configSchema`     | [config-schema](https://sandustry-modding.github.io/#/config-schema) |
-| Bundle patches     | [patches](https://sandustry-modding.github.io/#/patches) |
-| Modkit             | [modkit](https://sandustry-modding.github.io/#/modkit/) |
-| UI kit             | [UI kit](https://sandustry-modding.github.io/#/ui/) |
-| Sandkit API        | [Search](https://sandustry-modding.github.io/#/search) |
-| Official Sandkit   | https://sandustry.com/sandkit.html                    |
+| Bundle patches     | [patches](https://sandustry-modding.github.io/#/patches)             |
+| Modkit             | [modkit](https://sandustry-modding.github.io/#/modkit/)              |
+| UI kit             | [UI kit](https://sandustry-modding.github.io/#/ui/)                  |
+| Sandkit API        | [Search](https://sandustry-modding.github.io/#/search)               |
+| Official Sandkit   | https://sandustry.com/sandkit.html                                   |
