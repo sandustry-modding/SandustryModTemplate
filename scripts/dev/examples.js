@@ -42,7 +42,10 @@ function cleanup() {
     else removeOwnedGameMods(ROOT);
   } catch (err) {
     console.error(
-      styleText("red", cleanup === "all" ? "Failed to clear dist/:" : "Failed to remove owned mods:"),
+      styleText(
+        "red",
+        cleanup === "all" ? "Failed to clear dist/:" : "Failed to remove owned mods:",
+      ),
       err,
     );
   }

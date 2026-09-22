@@ -21,14 +21,14 @@ Do not commit, push, or publish without passing the gate for that step.
 
 ## Gate map
 
-| Gate | When | Ask |
-| --- | --- | --- |
-| 0 | Mod is not obvious | Which mod to release? |
-| A | Mod and version are known | Start this release? |
-| B | Tests pass | Apply version and CHANGELOG? |
-| C | Working tree is release-ready | Commit in the mod repo? |
-| D | Commit exists locally | Push to origin? |
-| E | Push finished (or skipped) | Upload to Steam Workshop? |
+| Gate | When                          | Ask                          |
+| ---- | ----------------------------- | ---------------------------- |
+| 0    | Mod is not obvious            | Which mod to release?        |
+| A    | Mod and version are known     | Start this release?          |
+| B    | Tests pass                    | Apply version and CHANGELOG? |
+| C    | Working tree is release-ready | Commit in the mod repo?      |
+| D    | Commit exists locally         | Push to origin?              |
+| E    | Push finished (or skipped)    | Upload to Steam Workshop?    |
 
 ## Step 0 — Pick mod and survey
 
@@ -86,11 +86,11 @@ Also read:
 
 Propose the next semver from `## Unreleased`:
 
-| Unreleased content | Bump |
-| --- | --- |
-| Breaking change | major |
+| Unreleased content             | Bump  |
+| ------------------------------ | ----- |
+| Breaking change                | major |
 | New feature or behavior change | minor |
-| Fixes only | patch |
+| Fixes only                     | patch |
 
 If `## Unreleased` is empty, stop and tell the user.
 
@@ -253,13 +253,13 @@ Do not pass `--watch`, `--debug`, or `--game`.
 
 Always end with:
 
-| Item | Value |
-| --- | --- |
-| Mod | `src/<folder>/` |
-| Version | `<version>` |
-| Commit | hash or "not committed" |
-| Push | pushed / skipped |
-| Workshop | uploaded / skipped / failed |
+| Item       | Value                                           |
+| ---------- | ----------------------------------------------- |
+| Mod        | `src/<folder>/`                                 |
+| Version    | `<version>`                                     |
+| Commit     | hash or "not committed"                         |
+| Push       | pushed / skipped                                |
+| Workshop   | uploaded / skipped / failed                     |
 | Steam item | `publishedFileId` from `workshop/workshop.json` |
 
 List anything still dirty.

@@ -7,16 +7,11 @@
       "request": "launch",
       "program": "${workspaceFolder}/scripts/sandustry/sandustry-vscode-launch.js",
       "cwd": "${workspaceFolder}",
-      "args": [
-        "--mod",
-        "${input:debugMod}"
-      ],
+      "args": ["--mod", "${input:debugMod}"],
       "console": "internalConsole",
       "internalConsoleOptions": "neverOpen",
       "autoAttachChildProcesses": false,
-      "skipFiles": [
-        "<node_internals>/**"
-      ],
+      "skipFiles": ["<node_internals>/**"],
       "killBehavior": "forceful",
       "serverReadyAction": {
         "pattern": "Launched Sandustry with debug ports",
@@ -35,15 +30,11 @@
       "request": "launch",
       "program": "${workspaceFolder}/scripts/sandustry/sandustry-vscode-launch.js",
       "cwd": "${workspaceFolder}",
-      "args": [
-        "--all"
-      ],
+      "args": ["--all"],
       "console": "internalConsole",
       "internalConsoleOptions": "neverOpen",
       "autoAttachChildProcesses": false,
-      "skipFiles": [
-        "<node_internals>/**"
-      ],
+      "skipFiles": ["<node_internals>/**"],
       "killBehavior": "forceful",
       "serverReadyAction": {
         "pattern": "Launched Sandustry with debug ports",

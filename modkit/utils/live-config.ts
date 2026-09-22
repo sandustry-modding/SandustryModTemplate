@@ -103,7 +103,8 @@ export function inferLiveConfigGroup(key: string): string {
   if (key.startsWith("pine")) return "pine";
   if (key.startsWith("oak")) return "oak";
   if (key.startsWith("wood")) return "wood";
-  if (key.startsWith("compost") || key.startsWith("dirt") || key.startsWith("wet")) return "compost";
+  if (key.startsWith("compost") || key.startsWith("dirt") || key.startsWith("wet"))
+    return "compost";
   if (key.startsWith("sieve")) return "sieve";
   return "general";
 }
@@ -162,7 +163,9 @@ export function formatLiveConfigDefaults(entry: LiveConfigEntry): string {
     for (const field of groups[groupIndex].fields) {
       written += 1;
       const comma = written < fieldCount ? "," : "";
-      lines.push(`  ${field.key}: ${formatLiveConfigValue(values[field.key] as LiveConfigValue)}${comma}`);
+      lines.push(
+        `  ${field.key}: ${formatLiveConfigValue(values[field.key] as LiveConfigValue)}${comma}`,
+      );
     }
   }
 

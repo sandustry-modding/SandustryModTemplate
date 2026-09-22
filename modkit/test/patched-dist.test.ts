@@ -90,7 +90,10 @@ test("buildPatchedDistSources applies external-mod-runtime.js patches", (t) => {
   const patches = collectTestHostPatches(modsDir);
   const patched = buildPatchedDistSources(distDir, { modsDir, patches });
   const runtime = patched.get("js/external-mod-runtime.js");
-  assert.ok(runtime?.includes("example-runtime-marker"), "runtime patch missing from served runtime");
+  assert.ok(
+    runtime?.includes("example-runtime-marker"),
+    "runtime patch missing from served runtime",
+  );
 });
 
 test("buildPatchedDistSources applies collector admission once when both samples are present", (t) => {

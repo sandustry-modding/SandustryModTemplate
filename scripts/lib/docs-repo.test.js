@@ -30,10 +30,7 @@ test("ensureDocsRepo rejects a non-git docs/ folder", () => {
   const root = mkdtempSync(join(tmpdir(), "docs-repo-"));
   try {
     mkdirSync(join(root, "docs"));
-    assert.throws(
-      () => ensureDocsRepo(root, { clone: () => ({ status: 0 }) }),
-      /not a git clone/,
-    );
+    assert.throws(() => ensureDocsRepo(root, { clone: () => ({ status: 0 }) }), /not a git clone/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -60,10 +57,7 @@ test("ensureDocsRepo clones the org Pages repo when docs/ is missing", () => {
 test("ensureDocsRepo throws when git clone fails", () => {
   const root = mkdtempSync(join(tmpdir(), "docs-repo-"));
   try {
-    assert.throws(
-      () => ensureDocsRepo(root, { clone: () => ({ status: 1 }) }),
-      /Failed to clone/,
-    );
+    assert.throws(() => ensureDocsRepo(root, { clone: () => ({ status: 1 }) }), /Failed to clone/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
