@@ -14,6 +14,9 @@ For game or Sandkit facts, load in order:
 
 OKF is game-only.
 Read `docs/okf/AGENTS.md` before you edit that tree.
+When you learn a vanilla game or Sandkit fact, write it into `docs/okf/` before you finish.
+Follow `docs/okf/AGENTS.md` → New findings.
+Mod behavior stays in that mod's `README.md` or `CHANGELOG.md`.
 Template and kit: root `README.md` and `docs/modkit/`.
 Use official Sandkit signatures only: `.tmp/Sandkit - Sandustry Modding API.html` or https://sandustry.com/sandkit.html.
 
