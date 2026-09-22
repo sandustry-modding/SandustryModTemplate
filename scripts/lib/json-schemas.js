@@ -1,9 +1,7 @@
-/** Published SandustryTypes JSON Schemas for IDE validation. */
-export const MODINFO_JSON_SCHEMA =
-  "https://sandustry-modding.github.io/SandustryTypes/schemas/modinfo.json";
+/** Published JSON Schema URLs for IDE validation. */
+export const MODINFO_JSON_SCHEMA = "https://sandustry-modding.github.io/schemas/modinfo.json";
 
-export const PATCHES_JSON_SCHEMA =
-  "https://sandustry-modding.github.io/SandustryTypes/schemas/patches.json";
+export const PATCHES_JSON_SCHEMA = "https://sandustry-modding.github.io/schemas/patches.json";
 
 /**
  * Remove `$schema` before writing game-facing JSON.

@@ -4,7 +4,7 @@
   "json.schemas": [
     {
       "fileMatch": ["**/patches.json"],
-      "url": "https://sandustry-modding.github.io/SandustryTypes/schemas/patches.json"
+      "url": "https://sandustry-modding.github.io/schemas/patches.json"
     }
   ],
   "[typescript]": {

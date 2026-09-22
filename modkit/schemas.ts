@@ -1,12 +1,10 @@
 import type { ModInfo } from "@sandustry-modding/types/configs";
 
-/** Published SandustryTypes JSON Schema for `modinfo.json`. */
-export const MODINFO_JSON_SCHEMA =
-  "https://sandustry-modding.github.io/SandustryTypes/schemas/modinfo.json";
+/** Published JSON Schema URL for `modinfo.json`. */
+export const MODINFO_JSON_SCHEMA = "https://sandustry-modding.github.io/schemas/modinfo.json";
 
-/** Published SandustryTypes JSON Schema for `patches.json`. */
-export const PATCHES_JSON_SCHEMA =
-  "https://sandustry-modding.github.io/SandustryTypes/schemas/patches.json";
+/** Published JSON Schema URL for `patches.json`. */
+export const PATCHES_JSON_SCHEMA = "https://sandustry-modding.github.io/schemas/patches.json";
 
 /** Drop `$schema` before passing a JSON manifest to the game or `defineModInfo`. */
 export function stripJsonSchema<T extends Record<string, unknown>>(
