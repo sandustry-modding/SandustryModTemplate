@@ -2,7 +2,7 @@
  * Clone sandustry-modding/SandustryTypes into SandustryTypes/ when that folder is missing.
  */
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { styleText } from "./cli-style.js";
 
@@ -27,17 +27,39 @@ function gitStatus(result) {
 }
 
 /**
+ * npm ci may create `SandustryTypes/node_modules` from the lockfile before
+ * preinstall can clone. Treat empty / node_modules-only trees as stubs.
+ *
+ * @param {string} dest Absolute `SandustryTypes/` path
+ * @returns {boolean}
+ */
+export function isNpmTypesStub(dest) {
+  if (!existsSync(dest)) return false;
+  if (existsSync(join(dest, ".git"))) return false;
+  if (existsSync(join(dest, "package.json"))) return false;
+  const entries = readdirSync(dest);
+  return entries.every((name) => name === "node_modules" || name === "package-lock.json");
+}
+
+/**
  * @param {string} repoRoot Template repository root
- * @param {{ clone?: (args: string[]) => { status?: number | null } }} [deps]
+ * @param {{
+ *   clone?: (args: string[]) => { status?: number | null };
+ *   remove?: (path: string) => void;
+ * }} [deps]
  * @returns {string} Absolute `SandustryTypes/` path
  */
 export function ensureTypesRepo(repoRoot, deps = {}) {
   const dest = typesRepoPath(repoRoot);
   if (existsSync(join(dest, ".git"))) return dest;
   if (existsSync(dest)) {
-    throw new Error(
-      `${TYPES_DIR}/ exists but is not a git clone of ${TYPES_REMOTE}. Remove ${TYPES_DIR}/ or clone that repository into ${TYPES_DIR}/.`,
-    );
+    if (!isNpmTypesStub(dest)) {
+      throw new Error(
+        `${TYPES_DIR}/ exists but is not a git clone of ${TYPES_REMOTE}. Remove ${TYPES_DIR}/ or clone that repository into ${TYPES_DIR}/.`,
+      );
+    }
+    const remove = deps.remove ?? ((path) => rmSync(path, { recursive: true, force: true }));
+    remove(dest);
   }
 
   console.log(styleText(["bold", "cyan"], `Cloning SandustryTypes into ${TYPES_DIR}/`));

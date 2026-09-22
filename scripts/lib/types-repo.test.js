@@ -1,9 +1,15 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { TYPES_REMOTE, ensureTypesRepo, syncTypesRepo, typesRepoPath } from "./types-repo.js";
+import {
+  TYPES_REMOTE,
+  ensureTypesRepo,
+  isNpmTypesStub,
+  syncTypesRepo,
+  typesRepoPath,
+} from "./types-repo.js";
 
 test("ensureTypesRepo returns SandustryTypes/ when it is already a git clone", () => {
   const root = mkdtempSync(join(tmpdir(), "types-repo-"));
@@ -26,11 +32,44 @@ test("ensureTypesRepo returns SandustryTypes/ when it is already a git clone", (
   }
 });
 
-test("ensureTypesRepo rejects a non-git SandustryTypes/ folder", () => {
+test("ensureTypesRepo rejects a non-git SandustryTypes/ folder with package.json", () => {
   const root = mkdtempSync(join(tmpdir(), "types-repo-"));
   try {
-    mkdirSync(join(root, "SandustryTypes"));
+    const dest = join(root, "SandustryTypes");
+    mkdirSync(dest);
+    writeFileSync(join(dest, "package.json"), "{}\n");
+    assert.equal(isNpmTypesStub(dest), false);
     assert.throws(() => ensureTypesRepo(root, { clone: () => ({ status: 0 }) }), /not a git clone/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("ensureTypesRepo replaces an npm ci stub and clones", () => {
+  const root = mkdtempSync(join(tmpdir(), "types-repo-"));
+  try {
+    const dest = join(root, "SandustryTypes");
+    mkdirSync(join(dest, "node_modules"), { recursive: true });
+    assert.equal(isNpmTypesStub(dest), true);
+
+    const removed = [];
+    const calls = [];
+    assert.equal(
+      ensureTypesRepo(root, {
+        remove: (path) => {
+          removed.push(path);
+          rmSync(path, { recursive: true, force: true });
+        },
+        clone: (args) => {
+          calls.push(args);
+          mkdirSync(join(root, "SandustryTypes", ".git"), { recursive: true });
+          return { status: 0 };
+        },
+      }),
+      dest,
+    );
+    assert.deepEqual(removed, [dest]);
+    assert.deepEqual(calls, [["clone", TYPES_REMOTE, "SandustryTypes"]]);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
