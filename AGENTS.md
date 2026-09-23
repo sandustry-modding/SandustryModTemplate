@@ -25,24 +25,10 @@ Read `SandustryTypes/AGENTS.md` before you edit it.
 
 ## Live game
 
-CDP `:9222` (F5 / Steam / `npm run sandustry`).
-MCP namespace `sandustry` for snapshot, click, type, screenshot, evaluate.
-`sandkit` is a global in that session.
-Integration tests: CDP `:9224` (`npm run test:integration`).
-Attach, evaluate, `__debug`: `docs/okf/live/`.
-Ask the user for a hard reload.
-Keep Sandustry running.
-Restart (F5) after `worker.js` or `patches.json` changes.
+MCP namespace `sandustry` is always available against a real running game for query and test.
+Session globals such as `sandkit` are available in that instance.
 
 ## Markdown
 
 One sentence per line.
 Exceptions: tables, fenced code, headings.
-
-## Mods
-
-Root `README.md` is the template guide.
-Only `template` ships here.
-Samples: `npm run examples` → [SandustryExamples](https://github.com/sandustry-modding/SandustryExamples).
-Other mods: their own `README.md` and `CHANGELOG.md`.
-`sandustry/` layout: root `README.md` → Folder layout → `sandustry/`.
