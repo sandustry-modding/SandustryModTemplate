@@ -193,8 +193,9 @@ Every mod under `src/<name>/`, `mods/<name>/`, or `examples/<name>/` needs these
 | `main.ts`      | Mod entry                                                                                                          |
 
 TypeScript uses two projects.
-[`tsconfig.json`](tsconfig.json) checks main-thread code under `modkit/`, `src/`, `examples/`, and `mods/`.
-It loads main ambient `sandkit` from `@sandustry-modding/types` (`src/global.d.ts` in `tsconfig.json` `files`) and **excludes** `worker.ts` and `*.worker.ts`.
+[`tsconfig.json`](tsconfig.json) is a solution file (`files` is empty) so the editor loads both projects.
+[`tsconfig.main.json`](tsconfig.main.json) checks main-thread code under `modkit/`, `src/`, `examples/`, and `mods/`.
+It loads main ambient `sandkit` from `@sandustry-modding/types` (`src/global.d.ts` in `tsconfig.main.json` `files`) and **excludes** `worker.ts` and `*.worker.ts`.
 [`tsconfig.worker.json`](tsconfig.worker.json) typechecks worker entry files under `src/`, `examples/`, and `mods/`.
 That project loads the worker ambient so `sandkit.api` is `WorkerSandkitApi` with no cast.
 Run `npm run typecheck` to check both.
@@ -238,7 +239,7 @@ Import `@modkit/*` and files in your own folder only.
 
 Sandkit API types come from the local `SandustryTypes/` clone, npm-linked as `@sandustry-modding/types` (`file:SandustryTypes` in root `package.json`).
 Browse the reference at [Sandustry Modding docs](https://sandustry-modding.github.io/#/search).
-Main-thread ambient `sandkit` loads through `tsconfig.json` `files` (`@sandustry-modding/types` `src/global.d.ts`).
+Main-thread ambient `sandkit` loads through `tsconfig.main.json` `files` (`@sandustry-modding/types` `src/global.d.ts`).
 Worker entries use the worker project above, not a cast on `sandkit.api`.
 Do not list this package under `compilerOptions.types`.
 Manifest and patch schemas: `@sandustry-modding/types/configs`.
@@ -246,8 +247,8 @@ To pin types work to a branch or fork, check out that ref inside `SandustryTypes
 
 ## Troubleshooting
 
-**Worker files show `Property 'worker' does not exist on type 'SandkitApi'`** — The editor is using the main-thread ambient.
-Reload the TypeScript language service so it loads `tsconfig.worker.json` (workspace setting `typescript.tsserver.experimental.enableProjectDiagnostics`).
+**Worker files show main-thread `sandkit` errors** (for example `HookOptions` has no `guard`) — The editor is using the main-thread ambient.
+Confirm [`tsconfig.json`](tsconfig.json) references [`tsconfig.worker.json`](tsconfig.worker.json), then run **TypeScript: Restart TS Server**.
 
 **`npm run setup` fails** — Fix each `FAIL` line, then run `npm run setup` again.
 

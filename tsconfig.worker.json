@@ -1,5 +1,5 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "./tsconfig.main.json",
   "files": [
     "node_modules/@sandustry-modding/types/src/worker/global.d.ts"
   ],

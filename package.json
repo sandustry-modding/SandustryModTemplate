@@ -10,7 +10,7 @@
     "dev:release": "node scripts/dev/dev.js --no-debug",
     "dev:pick": "node scripts/dev/dev.js --pick",
     "examples": "node scripts/dev/examples.js",
-    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.worker.json",
+    "typecheck": "tsc --noEmit -p tsconfig.main.json && tsc --noEmit -p tsconfig.worker.json",
     "test": "node scripts/test/test.js",
     "test:integration": "node scripts/test/integration.js",
     "test:integration:view": "node scripts/test/integration.js --view",

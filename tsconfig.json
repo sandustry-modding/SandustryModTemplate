@@ -1,25 +1,7 @@
 {
-  "compilerOptions": {
-    "target": "ES2020",
-    "module": "ESNext",
-    "moduleDetection": "force",
-    "moduleResolution": "bundler",
-    "jsx": "react-jsx",
-    "jsxImportSource": "react",
-    "strict": true,
-    "noEmit": true,
-    "skipLibCheck": false,
-    "isolatedModules": true,
-    "lib": ["ES2021", "DOM"],
-    "types": ["react", "node"],
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "paths": {
-      "*": ["./*"],
-      "@modkit/*": ["./modkit/*"]
-    }
-  },
-  "files": ["node_modules/@sandustry-modding/types/src/global.d.ts"],
-  "include": ["modkit", "src", "examples", "mods"],
-  "exclude": ["**/worker.ts", "**/*.worker.ts"]
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.main.json" },
+    { "path": "./tsconfig.worker.json" }
+  ]
 }
