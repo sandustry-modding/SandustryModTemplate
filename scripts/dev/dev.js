@@ -26,6 +26,15 @@ import {
   resolveWatchModArgs,
   SELECTION_FILE,
 } from "./pick-dev-mods.js";
+import {
+  installNeverExitHandlers,
+  nextRestartDelay,
+  watchChildExitAction,
+} from "../lib/never-exit.js";
+
+installNeverExitHandlers((message, err) => {
+  console.error(styleText("red", message), err);
+});
 
 const ROOT = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
 try {
@@ -80,8 +89,11 @@ let child = spawnWatch();
 let stopping = false;
 let cleaned = false;
 let restarting = false;
+let restartDelayMs = 250;
 /** @type {ReturnType<typeof setTimeout> | undefined} */
 let restartTimer;
+/** @type {ReturnType<typeof setTimeout> | undefined} */
+let respawnTimer;
 
 function cleanup() {
   if (cleaned) return;
@@ -104,15 +116,28 @@ function cleanup() {
 
 function attachChild(proc) {
   proc.on("exit", (code, signal) => {
-    if (restarting) {
+    const action = watchChildExitAction({ stopping, restarting, signal });
+    if (action === "swap") {
       restarting = false;
+      restartDelayMs = 250;
       child = spawnWatch();
       attachChild(child);
       return;
     }
-    cleanup();
-    if (signal) process.exit(0);
-    process.exit(code ?? 0);
+    if (action === "exit") {
+      cleanup();
+      process.exit(signal ? 0 : (code ?? 0));
+      return;
+    }
+    const reason = code == null ? String(signal) : `code ${code}`;
+    console.error(styleText("red", `esbuild watch exited (${reason}) — restarting`));
+    clearTimeout(respawnTimer);
+    respawnTimer = setTimeout(() => {
+      if (stopping) return;
+      restartDelayMs = nextRestartDelay(restartDelayMs);
+      child = spawnWatch();
+      attachChild(child);
+    }, restartDelayMs);
   });
 }
 
@@ -149,6 +174,8 @@ if (followSelection) {
 function stop(signal) {
   if (stopping) return;
   stopping = true;
+  clearTimeout(respawnTimer);
+  clearTimeout(restartTimer);
   if (!child.killed) child.kill(signal);
 }
 

@@ -38,7 +38,10 @@ In-game Save, quicksave, and autosave for that session appear on the right under
 Continue for your campaign stays on last-played.
 F5 does not change last-played. `npm run setup` creates the Steam test world when it is missing and does not overwrite it.
 It does not put a `.save` in the mod folder. **Sandustry (all mods)** starts every selected mod and Continues.
-In game, look for **Template loaded**. **Alt+E** opens the overlay sample after `npm run examples` (`examples/overlay-hotkey`).
+In game, look for **Template loaded**.
+**Alt+E** opens the overlay.
+**T** fires the input toast.
+`npm run examples` clones extra samples (`examples/overlay-hotkey`).
 
 Windows: the same commands work in PowerShell.
 If setup cannot find the game:
@@ -59,8 +62,9 @@ Restart the game for workers and patches.
 ### Your own mod
 
 1. Open `src/template/`.
-2. Set `id`, `name`, and `author` in `modinfo.json` ([field list](https://sandustry-modding.github.io/#/modinfo)).
+2. Set `id`, `name`, and `author` in `modinfo.ts` ([field list](https://sandustry-modding.github.io/#/modinfo)).
 3. Edit `main.ts`.
+   Keep it as `isEnabled()` plus `register()` calls.
    Put extra source in feature folders, not next to `main.ts`.
 4. Copy `src/template/` to `src/<your-mod>/` when you want a second mod.
 
@@ -176,9 +180,9 @@ Run `npm run examples` to clone them into `examples/`, then copy a folder into `
 
 Mods in `src/` that ship with this template:
 
-| Folder                      | What it shows                                                                 |
-| --------------------------- | ----------------------------------------------------------------------------- |
-| [`template`](src/template/) | Starter mod. Toast on load. Change `id` / `name` / `author` in `modinfo.json` |
+| Folder                      | What it shows                                                                                                                                   |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`template`](src/template/) | Starter mod. Toast on load. `register` folders, worker, overlay, Spark Dust, chalk, and beacon. Change `id` / `name` / `author` in `modinfo.ts` |
 
 ### Files in a mod folder
 

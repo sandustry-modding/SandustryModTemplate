@@ -11,58 +11,91 @@ import { ensureExamplesRepo } from "../lib/examples-repo.js";
 import { resolveDevCleanup } from "../lib/env.js";
 import { removeAllDistContents, removeOwnedGameMods } from "../lib/mod-path.js";
 import { pickDevModArgs } from "./pick-dev-mods.js";
+import {
+  installNeverExitHandlers,
+  nextRestartDelay,
+  watchChildExitAction,
+} from "../lib/never-exit.js";
 
 const ROOT = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
+installNeverExitHandlers((message, err) => {
+  console.error(styleText("red", message), err);
+});
 ensureExamplesRepo(ROOT);
 const extra = ["--examples", ...process.argv.slice(2)];
 const modArgs = await pickDevModArgs(extra, { skipPicker: true, roots: ["examples"] });
 
 console.log(styleText(["bold", "cyan"], "Watching examples/ mods"));
 
-const child = spawn(
-  process.execPath,
-  [join(ROOT, "scripts/build/esbuild.config.mjs"), "--watch", ...modArgs, ...extra],
-  {
+const esbuildScript = join(ROOT, "scripts/build/esbuild.config.mjs");
+
+function spawnWatch() {
+  return spawn(process.execPath, [esbuildScript, "--watch", ...modArgs, ...extra], {
     stdio: "inherit",
     cwd: ROOT,
     windowsHide: true,
-  },
-);
+  });
+}
 
+let child = spawnWatch();
 let stopping = false;
 let cleaned = false;
+let restartDelayMs = 250;
+/** @type {ReturnType<typeof setTimeout> | undefined} */
+let respawnTimer;
 
 function cleanup() {
   if (cleaned) return;
   cleaned = true;
-  const cleanup = resolveDevCleanup();
-  if (cleanup === "off") return;
+  const cleanupMode = resolveDevCleanup();
+  if (cleanupMode === "off") return;
   try {
-    if (cleanup === "all") removeAllDistContents(ROOT);
+    if (cleanupMode === "all") removeAllDistContents(ROOT);
     else removeOwnedGameMods(ROOT);
   } catch (err) {
     console.error(
       styleText(
         "red",
-        cleanup === "all" ? "Failed to clear dist/:" : "Failed to remove owned mods:",
+        cleanupMode === "all" ? "Failed to clear dist/:" : "Failed to remove owned mods:",
       ),
       err,
     );
   }
 }
 
+function attachChild(proc) {
+  proc.on("exit", (code, signal) => {
+    const action = watchChildExitAction({
+      stopping,
+      restarting: false,
+      signal,
+    });
+    if (action === "exit") {
+      cleanup();
+      process.exit(signal ? 0 : (code ?? 0));
+      return;
+    }
+    const reason = code == null ? String(signal) : `code ${code}`;
+    console.error(styleText("red", `esbuild watch exited (${reason}) — restarting`));
+    clearTimeout(respawnTimer);
+    respawnTimer = setTimeout(() => {
+      if (stopping) return;
+      restartDelayMs = nextRestartDelay(restartDelayMs);
+      child = spawnWatch();
+      attachChild(child);
+    }, restartDelayMs);
+  });
+}
+
+attachChild(child);
+
 /** @param {NodeJS.Signals} signal */
 function stop(signal) {
   if (stopping) return;
   stopping = true;
+  clearTimeout(respawnTimer);
   if (!child.killed) child.kill(signal);
 }
-
-child.on("exit", (code, signal) => {
-  cleanup();
-  if (signal) process.exit(0);
-  process.exit(code ?? 0);
-});
 
 process.on("exit", cleanup);
 process.on("SIGINT", () => stop("SIGINT"));

@@ -35,6 +35,7 @@ import { modkitAliasPlugin } from "../lib/modkit-alias.js";
 import { stripJsonSchema } from "../lib/json-schemas.js";
 import { loadModManifestExports } from "../lib/mod-manifest.js";
 import { writeJsonIfChanged, writeTextIfChanged } from "../lib/write-if-changed.js";
+import { installNeverExitHandlers } from "../lib/never-exit.js";
 
 const ROOT = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
 const MODKIT_DIR = join(ROOT, "modkit");
@@ -599,30 +600,44 @@ function mainEntryBootstrapPlugin(mod) {
  * @param {string} source
  */
 function splitLeadingImports(source) {
-  const match = source.match(
+  const header = source.match(/^(?:\s|\/\*[\s\S]*?\*\/|\/\/[^\n]*\n)*/)?.[0] ?? "";
+  const rest = source.slice(header.length);
+  const match = rest.match(
     /^((?:\s*import\s+(?:type\s+)?(?:[\s\S]*?from\s*)?["'][^"']+["']\s*;\s*)+)/,
   );
   if (!match) return { imports: "", body: source };
   return {
-    imports: match[1].trim(),
-    body: source.slice(match[1].length).trimStart(),
+    imports: `${header}${match[1]}`.trim(),
+    body: rest.slice(match[1].length).trimStart(),
   };
+}
+
+function logWatchError(mod, err) {
+  const label = mod.folder;
+  console.error(styleText("red", `watch ${label} failed — still watching`));
+  console.error(err);
 }
 
 /**
  * @param {import("./mods.js").LoadedMod} mod
  */
 async function compileFromBundleGraph(mod) {
-  const result = await esbuild.build({
-    ...bundleOptions(mod),
-    write: false,
-    logLevel: "silent",
-    metafile: true,
-    plugins: [...basePlugins(mod), stubCssPlugin()],
-  });
-  const cssEntry = findTailwindCssEntry(result.metafile, ROOT);
-  if (!cssEntry) return "";
-  return compileTailwindUtilities(bundledContentFiles(result.metafile, ROOT), cssEntry);
+  try {
+    const result = await esbuild.build({
+      ...bundleOptions(mod),
+      write: false,
+      logLevel: "silent",
+      metafile: true,
+      plugins: [...basePlugins(mod), stubCssPlugin()],
+    });
+    const cssEntry = findTailwindCssEntry(result.metafile, ROOT);
+    if (!cssEntry) return "";
+    return compileTailwindUtilities(bundledContentFiles(result.metafile, ROOT), cssEntry);
+  } catch (err) {
+    if (!watch) throw err;
+    logWatchError(mod, err);
+    return "";
+  }
 }
 
 function removeStrayMainCss(mod) {
@@ -673,37 +688,41 @@ async function watchOne(mod) {
         name: "sync-mod",
         setup(build) {
           build.onEnd(async (result) => {
-            if (result.errors.length > 0) return;
+            try {
+              if (result.errors.length > 0) return;
 
-            const queueCssRebuild = () => {
-              if (cssRebuildTimer != null) clearTimeout(cssRebuildTimer);
-              cssRebuildTimer = setTimeout(() => {
-                cssRebuildTimer = null;
-                void mainCtx.rebuild();
-              }, 0);
-            };
+              const queueCssRebuild = () => {
+                if (cssRebuildTimer != null) clearTimeout(cssRebuildTimer);
+                cssRebuildTimer = setTimeout(() => {
+                  cssRebuildTimer = null;
+                  void mainCtx.rebuild().catch((err) => logWatchError(mod, err));
+                }, 0);
+              };
 
-            const cssEntry = findTailwindCssEntry(result.metafile, ROOT);
-            if (cssEntry) {
-              const next = await compileTailwindUtilities(
-                bundledContentFiles(result.metafile, ROOT),
-                cssEntry,
-              );
-              if (next !== tailwindCss) {
-                tailwindCss = next;
+              const cssEntry = findTailwindCssEntry(result.metafile, ROOT);
+              if (cssEntry) {
+                const next = await compileTailwindUtilities(
+                  bundledContentFiles(result.metafile, ROOT),
+                  cssEntry,
+                );
+                if (next !== tailwindCss) {
+                  tailwindCss = next;
+                  queueCssRebuild();
+                  return;
+                }
+              } else if (tailwindCss) {
+                tailwindCss = "";
                 queueCssRebuild();
                 return;
               }
-            } else if (tailwindCss) {
-              tailwindCss = "";
-              queueCssRebuild();
-              return;
-            }
 
-            maybeRewriteDebugMaps(mod);
-            removeStrayMainCss(mod);
-            await syncModFiles(mod);
-            logBuildResult(mod, result);
+              maybeRewriteDebugMaps(mod);
+              removeStrayMainCss(mod);
+              await syncModFiles(mod);
+              logBuildResult(mod, result);
+            } catch (err) {
+              logWatchError(mod, err);
+            }
           });
         },
       },
@@ -712,7 +731,9 @@ async function watchOne(mod) {
 
   await mainCtx.watch({ delay: 10 });
 
-  if (mod.worker) {
+  if (!mod.worker) return;
+
+  try {
     const workerCtx = await esbuild.context({
       ...workerBundleOptions(mod),
       plugins: [
@@ -721,23 +742,50 @@ async function watchOne(mod) {
           name: "sync-worker",
           setup(build) {
             build.onEnd(async (result) => {
-              if (result.errors.length > 0) return;
-              maybePatchWorkerSourceMap(mod);
-              await syncModFiles(mod);
-              logBuildResult(mod, result);
+              try {
+                if (result.errors.length > 0) return;
+                maybePatchWorkerSourceMap(mod);
+                await syncModFiles(mod);
+                logBuildResult(mod, result);
+              } catch (err) {
+                logWatchError(mod, err);
+              }
             });
           },
         },
       ],
     });
     await workerCtx.watch({ delay: 10 });
+  } catch (err) {
+    logWatchError(mod, err);
   }
 }
 
 if (watch) {
-  for (const mod of mods) {
-    await watchOne(mod);
+  installNeverExitHandlers((message, err) => {
+    console.error(styleText("red", message), err);
+  });
+  const watching = new Set();
+
+  async function tryWatch(mod) {
+    if (watching.has(mod.folder)) return;
+    try {
+      await watchOne(mod);
+      watching.add(mod.folder);
+    } catch (err) {
+      logWatchError(mod, err);
+    }
   }
+
+  for (const mod of mods) {
+    await tryWatch(mod);
+  }
+
+  setInterval(() => {
+    for (const mod of mods) void tryWatch(mod);
+  }, 2000);
+
+  await new Promise(() => {});
 } else {
   for (const mod of mods) {
     await buildOne(mod);
