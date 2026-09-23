@@ -26,11 +26,31 @@ function resolveModkitSpecifier(specifier) {
   return null;
 }
 
+/**
+ * @param {string} specifier
+ * @param {string} parentPath
+ * @returns {string | null}
+ */
+function resolveModkitRelativeSpecifier(specifier, parentPath) {
+  if (!specifier.startsWith(".") || !parentPath.startsWith(MODKIT_DIR)) return null;
+  const resolved = join(dirname(parentPath), specifier);
+  if (relative(MODKIT_DIR, resolved).startsWith("..")) return null;
+  const files = [`${resolved}.ts`, `${resolved}.js`, join(resolved, "index.ts"), join(resolved, "index.js")];
+  for (const file of files) {
+    if (existsSync(file) && statSync(file).isFile()) return file;
+  }
+  return null;
+}
+
 registerHooks({
   resolve(specifier, context, nextResolve) {
     const file = resolveModkitSpecifier(specifier);
-    if (!file) return nextResolve(specifier, context);
-    // Leave format unset so Node strips types from `.ts` files.
-    return nextResolve(pathToFileURL(file).href, context);
+    if (file) return nextResolve(pathToFileURL(file).href, context);
+    if (context.parentURL) {
+      const parentPath = fileURLToPath(context.parentURL);
+      const relativeFile = resolveModkitRelativeSpecifier(specifier, parentPath);
+      if (relativeFile) return nextResolve(pathToFileURL(relativeFile).href, context);
+    }
+    return nextResolve(specifier, context);
   },
 });

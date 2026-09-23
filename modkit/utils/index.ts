@@ -1,4 +1,5 @@
 export { safe } from "./safe";
+export { t } from "./i18n";
 export { isEnabled } from "./settings";
 export { inGame } from "./scene";
 export {
