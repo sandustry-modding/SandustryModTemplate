@@ -14,6 +14,7 @@ Feature folders use `register` / `registerWorker`.
 Set `id`, `name`, `author`, and `description` in `modinfo.ts`.
 Keep `main.ts` as a list of `register()` calls behind `isEnabled()`.
 Put extra source in feature folders, not next to `main.ts`.
+Keep worker code in `worker.ts` or `*.worker.ts`; do not import those files from `main.ts`.
 Restart the game after `worker.ts` or `patches.ts` changes.
 
 Copy `src/template/` to `src/<your-mod>/` when you want a second mod.

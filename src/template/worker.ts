@@ -1,5 +1,6 @@
 /**
- * Simulation workers. Type against WorkerSandkitApi, not SandkitApi.
+ * Simulation workers. `sandkit.api` is WorkerSandkitApi here because this file
+ * matches tsconfig.worker.json (`worker.ts` / `*.worker.ts`).
  * The game loads this script on every sim worker.
  * Restart the game after you change this file.
  */
@@ -8,20 +9,20 @@ import {
   resolveElementTypes,
 } from "./element/worker.ts";
 
-const workerApi = sandkit.api as unknown as WorkerSandkitApi;
+const api = sandkit.api;
 
 let booted = false;
 
 function boot(): void {
   if (booted) return;
-  registerElementWorker(workerApi, resolveElementTypes(workerApi));
+  registerElementWorker(api, resolveElementTypes(api));
   booted = true;
 }
 
 try {
   boot();
 } catch {
-  workerApi.events.on("worker:update:post", () => {
+  api.events.on("worker:update:post", () => {
     try {
       boot();
     } catch {

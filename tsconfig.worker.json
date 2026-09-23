@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "files": [
+    "node_modules/@sandustry-modding/types/src/worker/global.d.ts"
+  ],
+  "include": [
+    "src/**/worker.ts",
+    "src/**/*.worker.ts",
+    "examples/**/worker.ts",
+    "examples/**/*.worker.ts",
+    "mods/**/worker.ts",
+    "mods/**/*.worker.ts"
+  ],
+  "exclude": []
+}

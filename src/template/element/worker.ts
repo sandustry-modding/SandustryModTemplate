@@ -10,7 +10,7 @@ export function resolveElementTypes(api: WorkerSandkitApi): ElementTypes {
   };
 }
 
-/** Worker hooks. Cast sandkit.api to WorkerSandkitApi in worker.ts. */
+/** Worker hooks. Pass `sandkit.api` from a worker entry (WorkerSandkitApi via tsconfig.worker.json). */
 export function registerWorker(api: WorkerSandkitApi, types: ElementTypes): void {
   api.hooks.intercept(
     "element:update",

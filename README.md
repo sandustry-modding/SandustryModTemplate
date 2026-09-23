@@ -192,8 +192,16 @@ Every mod under `src/<name>/`, `mods/<name>/`, or `examples/<name>/` needs these
 | `modinfo.ts`   | TypeScript manifest (`defineModInfo` or `modinfoFromJson`). Optional patch re-exports                              |
 | `main.ts`      | Mod entry                                                                                                          |
 
-The repo has one [`tsconfig.json`](tsconfig.json).
-TypeScript checks `modkit/`, `src/`, `examples/`, and `mods/` together (`moduleDetection` is `force` so script-style `main.ts` files do not clash).
+TypeScript uses two projects.
+[`tsconfig.json`](tsconfig.json) checks main-thread code under `modkit/`, `src/`, `examples/`, and `mods/`.
+It loads main ambient `sandkit` from `@sandustry-modding/types` (`src/global.d.ts` in `tsconfig.json` `files`) and **excludes** `worker.ts` and `*.worker.ts`.
+[`tsconfig.worker.json`](tsconfig.worker.json) typechecks worker entry files only.
+That project loads the worker ambient so `sandkit.api` is `WorkerSandkitApi` with no cast.
+Run `npm run typecheck` to check both.
+Never load main and worker ambients in one TypeScript program.
+Do not import `worker.ts` / `*.worker.ts` from `main.ts` or other main-thread files.
+Shared helpers used by both threads must not assume either ambient `sandkit.api` shape, or they belong on one thread only.
+`moduleDetection` is `force` so script-style `main.ts` files do not clash.
 The build still blocks imports from another mod folder.
 
 Keep extra TypeScript out of the mod root.
@@ -230,7 +238,8 @@ Import `@modkit/*` and files in your own folder only.
 
 Sandkit API types come from the local `SandustryTypes/` clone, npm-linked as `@sandustry-modding/types` (`file:SandustryTypes` in root `package.json`).
 Browse the reference at [Sandustry Modding docs](https://sandustry-modding.github.io/#/search).
-Ambient `sandkit` loads through [`modkit/sandkit.d.ts`](modkit/sandkit.d.ts).
+Main-thread ambient `sandkit` loads through `tsconfig.json` `files` (`@sandustry-modding/types` `src/global.d.ts`).
+Worker entries use the worker project above, not a cast on `sandkit.api`.
 Do not list this package under `compilerOptions.types`.
 Manifest and patch schemas: `@sandustry-modding/types/configs`.
 To pin types work to a branch or fork, check out that ref inside `SandustryTypes/`, then run `npm install` again.

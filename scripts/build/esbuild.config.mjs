@@ -32,6 +32,7 @@ import {
 import { ensureExamplesRepo } from "../lib/examples-repo.js";
 import { copyWorkshopInstallFiles, removeWorkshopPublishFiles } from "../lib/workshop-files.js";
 import { modkitAliasPlugin } from "../lib/modkit-alias.js";
+import { blockMainWorkerImportsPlugin } from "../lib/block-main-worker-imports.js";
 import { stripJsonSchema } from "../lib/json-schemas.js";
 import { loadModManifestExports } from "../lib/mod-manifest.js";
 import { writeJsonIfChanged, writeTextIfChanged } from "../lib/write-if-changed.js";
@@ -465,6 +466,11 @@ function basePlugins(mod) {
   ];
 }
 
+/** Plugins for the main (renderer) bundle only — not workerEntry. */
+function mainBundlePlugins(mod, ...extra) {
+  return [...basePlugins(mod), blockMainWorkerImportsPlugin(), ...extra];
+}
+
 /**
  * `import source from "modern-gif/worker"` must stay a string. Bundling that
  * file as JS would run `self.onmessage` on the renderer thread.
@@ -628,7 +634,7 @@ async function compileFromBundleGraph(mod) {
       write: false,
       logLevel: "silent",
       metafile: true,
-      plugins: [...basePlugins(mod), stubCssPlugin()],
+      plugins: [...mainBundlePlugins(mod), stubCssPlugin()],
     });
     const cssEntry = findTailwindCssEntry(result.metafile, ROOT);
     if (!cssEntry) return "";
@@ -653,7 +659,7 @@ async function buildOne(mod) {
   let tailwindCss = await compileFromBundleGraph(mod);
   const result = await esbuild.build({
     ...bundleOptions(mod),
-    plugins: [...basePlugins(mod), modkitCssTextPlugin(() => tailwindCss)],
+    plugins: [...mainBundlePlugins(mod), modkitCssTextPlugin(() => tailwindCss)],
   });
   removeStrayMainCss(mod);
   maybeRewriteDebugMaps(mod);
@@ -682,7 +688,7 @@ async function watchOne(mod) {
     ...bundleOptions(mod),
     metafile: true,
     plugins: [
-      ...basePlugins(mod),
+      ...mainBundlePlugins(mod),
       modkitCssTextPlugin(() => tailwindCss),
       {
         name: "sync-mod",
