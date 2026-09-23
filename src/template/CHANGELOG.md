@@ -4,6 +4,8 @@
 
 - Changed: Sample names are generic (`element`, `terrain`, `structure`).
 - Removed: Separate contact and runtime folders.
+- Removed: Load toast, grabber toast, and input toast.
+- Removed: F3 `createLiveConfig`.
 
 ## 0.0.2
 

@@ -3,16 +3,12 @@
  * The game loads this script on every sim worker.
  * Restart the game after you change this file.
  */
-import { templateLiveConfig } from "./shared/config.ts";
 import {
   registerWorker as registerElementWorker,
   resolveElementTypes,
 } from "./element/worker.ts";
 
 const workerApi = sandkit.api as unknown as WorkerSandkitApi;
-
-templateLiveConfig.get();
-templateLiveConfig.listen(workerApi);
 
 let booted = false;
 

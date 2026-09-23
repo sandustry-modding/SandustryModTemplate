@@ -38,9 +38,7 @@ In-game Save, quicksave, and autosave for that session appear on the right under
 Continue for your campaign stays on last-played.
 F5 does not change last-played. `npm run setup` creates the Steam test world when it is missing and does not overwrite it.
 It does not put a `.save` in the mod folder. **Sandustry (all mods)** starts every selected mod and Continues.
-In game, look for **Template loaded**.
 **Alt+E** opens the overlay.
-**T** fires the input toast.
 `npm run examples` clones extra samples (`examples/overlay-hotkey`).
 
 Windows: the same commands work in PowerShell.
@@ -182,7 +180,7 @@ Mods in `src/` that ship with this template:
 
 | Folder                      | What it shows                                                                                                                                   |
 | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`template`](src/template/) | Starter mod. Toast on load. `register` folders, worker, overlay, element, terrain, and structure. Change `id` / `name` / `author` in `modinfo.ts` |
+| [`template`](src/template/) | Starter mod. `register` folders, worker, overlay, element, terrain, and structure. Change `id` / `name` / `author` in `modinfo.ts` |
 
 ### Files in a mod folder
 

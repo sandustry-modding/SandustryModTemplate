@@ -1,4 +1,3 @@
-import { config } from "../shared/config.ts";
 import { ELEMENT, NAME_KEY } from "../shared/ids.ts";
 
 const api = sandkit.api;
@@ -12,7 +11,7 @@ export function register(): void {
   const { elementType } = api.elements.register({
     id: ELEMENT,
     nameKey: NAME_KEY.element,
-    density: config.elementDensity,
+    density: 180,
     matterType: sandkit.enums.MatterType.Powder,
     metaColor: 0xffb43c,
     colors: {

@@ -11,7 +11,7 @@ export const modinfo = defineModInfo({
   workerEntry: "worker.js",
   author: "Your Name",
   description:
-    "Starter mod. Toast on load. Element, terrain, structure, overlay, and worker samples.",
+    "Starter mod. Element, terrain, structure, overlay, and worker samples.",
   dependencies: [],
   loadOrder: 0,
   configSchema: {

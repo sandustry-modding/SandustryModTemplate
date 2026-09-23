@@ -1,4 +1,3 @@
-import { config } from "../shared/config.ts";
 import { NAME_KEY, STRUCTURE, STRUCTURE_SPRITE } from "../shared/ids.ts";
 
 const api = sandkit.api;
@@ -44,11 +43,7 @@ export async function register(): Promise<void> {
           }
         }
       }
-      if (config.debug && filled > 0) {
-        console.log(
-          `structure process (${structure.x}, ${structure.y}) ${filled}/16 cells occupied`,
-        );
-      }
+      if (filled === 0) return;
     },
   });
 }
