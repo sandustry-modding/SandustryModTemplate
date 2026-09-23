@@ -1,10 +1,10 @@
 import { createLiveConfig } from "@modkit/utils/live-config";
-import { modinfo } from "./modinfo.ts";
+import { modinfo } from "../modinfo.ts";
 
 /** F3 debug knobs. Not player Options (`configSchema` in modinfo). */
 export const templateConfigDefaults = {
   debug: false,
-  sparkDustDensity: 180,
+  elementDensity: 180,
 };
 
 export type TemplateConfig = typeof templateConfigDefaults;

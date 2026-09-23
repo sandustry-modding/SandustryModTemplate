@@ -7,13 +7,13 @@ function isGrabberUse(itemId: string | number): boolean {
   return itemId === grabber || itemId === String(grabber);
 }
 
-/** Main-thread hooks. Keep sim work in spark-dust/worker.ts. */
+/** Main-thread hooks. Keep sim work in element/worker.ts. */
 export function registerMain(): void {
-  const sparkDust = api.elements.getTypeById(ELEMENT.sparkDust);
+  const elementType = api.elements.getTypeById(ELEMENT);
   api.hooks.intercept("item:use", (args) => {
     if (!isGrabberUse(args.itemId)) return;
     const origin = api.input.getMouseCellPosition();
-    if (!api.elements.isTypeAtCell(origin.x, origin.y, sparkDust)) return;
-    api.ui.toast("Grabber used on Spark Dust", {});
+    if (!api.elements.isTypeAtCell(origin.x, origin.y, elementType)) return;
+    api.ui.toast("Grabber used on Element", {});
   });
 }

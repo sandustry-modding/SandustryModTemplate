@@ -2,7 +2,7 @@
 
 Starter mod in `src/`.
 Shows a toast when the mod loads.
-Feature folders follow the same `register` / `registerMain` / `registerWorker` shape as content mods.
+Feature folders use `register` / `registerMain` / `registerWorker`.
 
 ## Use
 
@@ -25,14 +25,12 @@ Copy `src/template/` to `src/<your-mod>/` when you want a second mod.
 | Folder        | What it shows                                                        |
 | ------------- | -------------------------------------------------------------------- |
 | `boot/`       | Toast on load                                                        |
-| `spark-dust/` | Custom powder, grabber hook, smelter recipe, worker `element:update` |
-| `chalk/`      | Custom terrain                                                       |
-| `beacon/`     | Structure plus processing (`mod/beacon.png`)                         |
-| `contact/`    | Spark Dust + water → steam                                           |
-| `ui/`         | Overlay (**Alt+E**) and a management-menu row (**F1**)               |
+| `element/`    | Custom powder, grabber hook, smelter recipe, contact, worker update  |
+| `terrain/`    | Custom terrain                                                       |
+| `structure/`  | Buildable 4×4 block with a 1s processing tick (`mod/structure.png`)  |
+| `ui/`         | Overlay (**Alt+E**)                                                  |
 | `input/`      | Key binding (**T**)                                                  |
-| `runtime/`    | `game:ready`, storage, triggers, escape hook, `schedule.nextTick`    |
-| `config.ts`   | F3 live-config knobs                                                 |
+| `shared/`     | Ids and F3 live-config knobs                                         |
 
 Optional `patches.ts` at the mod root: see [Patches](https://sandustry-modding.github.io/#/patches).
 Prefer Sandkit before patches.

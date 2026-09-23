@@ -5,27 +5,23 @@
  * Restart the game after worker.ts or patches.ts changes.
  */
 import { isEnabled } from "@modkit/utils";
-import { templateLiveConfig } from "./config.ts";
+import { templateLiveConfig } from "./shared/config.ts";
 import { register as registerBoot } from "./boot/register.ts";
-import { register as registerSparkDust } from "./spark-dust/register.ts";
-import { registerMain as registerSparkDustMain } from "./spark-dust/main.ts";
-import { register as registerChalk } from "./chalk/register.ts";
-import { register as registerBeacon } from "./beacon/register.ts";
-import { register as registerContact } from "./contact/register.ts";
+import { register as registerElement } from "./element/register.ts";
+import { registerMain as registerElementMain } from "./element/main.ts";
+import { register as registerTerrain } from "./terrain/register.ts";
+import { register as registerStructure } from "./structure/register.ts";
 import { register as registerUi } from "./ui/register.ts";
 import { register as registerInput } from "./input/register.ts";
-import { register as registerRuntime } from "./runtime/register.ts";
 
 templateLiveConfig.get();
 
 if (isEnabled()) {
   registerBoot();
-  registerSparkDust();
-  registerSparkDustMain();
-  registerChalk();
-  void registerBeacon();
-  registerContact();
+  registerElement();
+  registerElementMain();
+  registerTerrain();
+  void registerStructure();
   registerUi();
   registerInput();
-  registerRuntime();
 }

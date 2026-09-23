@@ -1,17 +1,18 @@
+import { config } from "../shared/config.ts";
 import { ELEMENT, NAME_KEY } from "../shared/ids.ts";
 
 const api = sandkit.api;
 
-/** Register a powder. Debug → Element → Spark Dust. */
+/** Powder. Debug → Element → Element. */
 export function register(): void {
   api.i18n.register("en", {
-    [NAME_KEY.sparkDust]: "Spark Dust",
+    [NAME_KEY.element]: "Element",
   });
 
   const { elementType } = api.elements.register({
-    id: ELEMENT.sparkDust,
-    nameKey: NAME_KEY.sparkDust,
-    density: 180,
+    id: ELEMENT,
+    nameKey: NAME_KEY.element,
+    density: config.elementDensity,
     matterType: sandkit.enums.MatterType.Powder,
     metaColor: 0xffb43c,
     colors: {
@@ -31,5 +32,15 @@ export function register(): void {
   api.structures.recipes.register("smelter", {
     input: elementType,
     outputs: [{ elementType: sand, chance: 1 }],
+  });
+
+  const water = api.elements.getTypeById("water");
+  const steam = api.elements.getTypeById("steam");
+  api.reactions.registerContact({
+    inputA: elementType,
+    inputB: water,
+    outputA: steam,
+    outputB: null,
+    orientation: "any",
   });
 }

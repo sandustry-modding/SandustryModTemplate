@@ -1,17 +1,17 @@
 import { ELEMENT } from "../shared/ids.ts";
 
-type SparkDustTypes = {
-  sparkDust: number;
+type ElementTypes = {
+  element: number;
 };
 
-export function resolveSparkDustTypes(api: WorkerSandkitApi): SparkDustTypes {
+export function resolveElementTypes(api: WorkerSandkitApi): ElementTypes {
   return {
-    sparkDust: api.elements.getTypeById(ELEMENT.sparkDust),
+    element: api.elements.getTypeById(ELEMENT),
   };
 }
 
 /** Worker hooks. Cast sandkit.api to WorkerSandkitApi in worker.ts. */
-export function registerWorker(api: WorkerSandkitApi, types: SparkDustTypes): void {
+export function registerWorker(api: WorkerSandkitApi, types: ElementTypes): void {
   api.hooks.intercept(
     "element:update",
     (args) => {
@@ -24,6 +24,6 @@ export function registerWorker(api: WorkerSandkitApi, types: SparkDustTypes): vo
       if (record.elementData.hasDuration[record.elementIndex] === 1) return;
       api.elements.setDurationAtCell(record.x, record.y, 30, { updateMax: true });
     },
-    { guard: { elementType: types.sparkDust } },
+    { guard: { elementType: types.element } },
   );
 }

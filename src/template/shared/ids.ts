@@ -1,26 +1,14 @@
 import { modinfo } from "../modinfo.ts";
 
-const root = modinfo.id;
-const ns = `${root}:`;
+const ns = `${modinfo.id}:`;
 
-export const ELEMENT = {
-  sparkDust: ns + "sparkDust",
-} as const;
+export const ELEMENT = ns + "element";
+export const TERRAIN = ns + "terrain";
+export const STRUCTURE = ns + "structure";
+export const STRUCTURE_SPRITE = ns + "structure-sprite";
 
 export const NAME_KEY = {
-  sparkDust: `${root}.element.sparkDust.name`,
-  chalk: `${root}.terrain.chalk.name`,
-  beacon: `${root}.structure.beacon.name`,
-} as const;
-
-export const TERRAIN = {
-  chalk: ns + "chalk",
-} as const;
-
-export const STRUCTURE = {
-  beacon: ns + "beacon",
-} as const;
-
-export const SPRITE = {
-  beacon: ns + "beacon-sprite",
+  element: `${modinfo.id}.element.name`,
+  terrain: `${modinfo.id}.terrain.name`,
+  structure: `${modinfo.id}.structure.name`,
 } as const;

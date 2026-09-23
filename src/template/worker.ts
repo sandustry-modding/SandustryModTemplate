@@ -3,11 +3,11 @@
  * The game loads this script on every sim worker.
  * Restart the game after you change this file.
  */
-import { templateLiveConfig } from "./config.ts";
+import { templateLiveConfig } from "./shared/config.ts";
 import {
-  registerWorker as registerSparkDustWorker,
-  resolveSparkDustTypes,
-} from "./spark-dust/worker.ts";
+  registerWorker as registerElementWorker,
+  resolveElementTypes,
+} from "./element/worker.ts";
 
 const workerApi = sandkit.api as unknown as WorkerSandkitApi;
 
@@ -18,7 +18,7 @@ let booted = false;
 
 function boot(): void {
   if (booted) return;
-  registerSparkDustWorker(workerApi, resolveSparkDustTypes(workerApi));
+  registerElementWorker(workerApi, resolveElementTypes(workerApi));
   booted = true;
 }
 
