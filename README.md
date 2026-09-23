@@ -178,8 +178,8 @@ Run `npm run examples` to clone them into `examples/`, then copy a folder into `
 
 Mods in `src/` that ship with this template:
 
-| Folder                      | What it shows                                                                                                                                   |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| Folder                      | What it shows                                                                                                                      |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | [`template`](src/template/) | Starter mod. `register` folders, worker, overlay, element, terrain, and structure. Change `id` / `name` / `author` in `modinfo.ts` |
 
 ### Files in a mod folder
@@ -195,7 +195,7 @@ Every mod under `src/<name>/`, `mods/<name>/`, or `examples/<name>/` needs these
 TypeScript uses two projects.
 [`tsconfig.json`](tsconfig.json) checks main-thread code under `modkit/`, `src/`, `examples/`, and `mods/`.
 It loads main ambient `sandkit` from `@sandustry-modding/types` (`src/global.d.ts` in `tsconfig.json` `files`) and **excludes** `worker.ts` and `*.worker.ts`.
-[`tsconfig.worker.json`](tsconfig.worker.json) typechecks worker entry files only.
+[`tsconfig.worker.json`](tsconfig.worker.json) typechecks worker entry files under `src/`, `examples/`, and `mods/`.
 That project loads the worker ambient so `sandkit.api` is `WorkerSandkitApi` with no cast.
 Run `npm run typecheck` to check both.
 Never load main and worker ambients in one TypeScript program.
@@ -245,6 +245,9 @@ Manifest and patch schemas: `@sandustry-modding/types/configs`.
 To pin types work to a branch or fork, check out that ref inside `SandustryTypes/`, then run `npm install` again.
 
 ## Troubleshooting
+
+**Worker files show `Property 'worker' does not exist on type 'SandkitApi'`** — The editor is using the main-thread ambient.
+Reload the TypeScript language service so it loads `tsconfig.worker.json` (workspace setting `typescript.tsserver.experimental.enableProjectDiagnostics`).
 
 **`npm run setup` fails** — Fix each `FAIL` line, then run `npm run setup` again.
 
