@@ -182,7 +182,7 @@ Mods in `src/` that ship with this template:
 
 | Folder                      | What it shows                                                                                                                                   |
 | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`template`](src/template/) | Starter mod. Toast on load. `register` folders, worker, overlay, Spark Dust, chalk, and beacon. Change `id` / `name` / `author` in `modinfo.ts` |
+| [`template`](src/template/) | Starter mod. Toast on load. `register` folders, worker, overlay, element, terrain, and structure. Change `id` / `name` / `author` in `modinfo.ts` |
 
 ### Files in a mod folder
 

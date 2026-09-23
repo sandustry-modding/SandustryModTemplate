@@ -6,7 +6,6 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { DEFAULT_MOD_ROOTS, discoverMods } from "../lib/mods.js";
-import { readLastDebugMod } from "../sandustry/pick-debug-mod.js";
 
 const ROOT = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
 
@@ -24,15 +23,12 @@ export function debugModPickFolders() {
 /**
  * @param {unknown} launch
  * @param {string[]} options
- * @param {string} [defaultFolder]
  */
-export function applyDebugModPickInput(launch, options, defaultFolder) {
+export function applyDebugModPickInput(launch, options) {
   if (!launch || typeof launch !== "object" || Array.isArray(launch)) {
     throw new Error("launch.json must be a JSON object");
   }
   if (options.length === 0) throw new Error("No mods found for the F5 picker.");
-  const defaultValue =
-    defaultFolder && options.includes(defaultFolder) ? defaultFolder : options[0];
   const rec = /** @type {Record<string, unknown>} */ (launch);
   rec.inputs = [
     {
@@ -40,7 +36,6 @@ export function applyDebugModPickInput(launch, options, defaultFolder) {
       type: "pickString",
       description: "Debug which mod?",
       options,
-      default: defaultValue,
     },
   ];
   return rec;
@@ -49,9 +44,8 @@ export function applyDebugModPickInput(launch, options, defaultFolder) {
 /** @param {string} [filePath] */
 export function syncLaunchDebugModPicker(filePath = launchJsonPath()) {
   const options = debugModPickFolders();
-  const last = readLastDebugMod();
   const launch = JSON.parse(readFileSync(filePath, "utf8"));
-  applyDebugModPickInput(launch, options, last?.folder);
+  applyDebugModPickInput(launch, options);
   writeFileSync(filePath, `${JSON.stringify(launch, null, 2)}\n`);
   return options;
 }
