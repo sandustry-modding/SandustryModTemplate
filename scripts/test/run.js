@@ -41,8 +41,6 @@ function collectIntegrationFiles() {
     ...globSync("src/**/integration.test.ts", { cwd: ROOT }),
     ...globSync("modkit/**/*.integration.test.ts", { cwd: ROOT }),
     ...globSync("modkit/**/integration.test.ts", { cwd: ROOT }),
-    ...globSync("examples/**/*.integration.test.ts", { cwd: ROOT }),
-    ...globSync("examples/**/integration.test.ts", { cwd: ROOT }),
   ];
   return [...new Set(files)].sort();
 }
@@ -112,8 +110,8 @@ export async function runNodeTests(options) {
   if (files.length === 0) {
     console.error(
       integration
-        ? argv.includes("--examples") ||
-          argv.some((arg) => arg === "--mod" || arg.startsWith("--mod="))
+        ? argv.some((arg) => arg === "--mod" || arg.startsWith("--mod=")) ||
+          argv.some((arg) => !arg.startsWith("-"))
           ? "No integration tests match the selected mods."
           : "No integration tests found (*.integration.test.ts)."
         : "No tests found (src/**/*.test.ts, modkit/**/*.test.ts).",

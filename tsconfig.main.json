@@ -20,6 +20,6 @@
     }
   },
   "files": ["node_modules/@sandustry-modding/types/src/global.d.ts"],
-  "include": ["modkit", "src", "examples", "mods"],
+  "include": ["modkit", "src", "mods"],
   "exclude": ["**/worker.ts", "**/*.worker.ts"]
 }

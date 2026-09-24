@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Watch every examples/<name>/ mod (no TTY picker).
- * Usage: npm run examples [-- --mod overlay-hotkey]
+ * Watch src/examples (one mod).
+ * Usage: npm run examples
  */
 import { spawn } from "node:child_process";
 import { dirname, join } from "node:path";
@@ -21,16 +21,17 @@ const ROOT = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
 installNeverExitHandlers((message, err) => {
   console.error(styleText("red", message), err);
 });
-ensureExamplesRepo(ROOT);
-const extra = ["--examples", ...process.argv.slice(2)];
-const modArgs = await pickDevModArgs(extra, { skipPicker: true, roots: ["examples"] });
 
-console.log(styleText(["bold", "cyan"], "Watching examples/ mods"));
+ensureExamplesRepo(ROOT);
+const extra = process.argv.slice(2);
+const modArgs = await pickDevModArgs(["--mod", "examples", ...extra], { skipPicker: true });
+
+console.log(styleText(["bold", "cyan"], "Watching src/examples"));
 
 const esbuildScript = join(ROOT, "scripts/build/esbuild.config.mjs");
 
 function spawnWatch() {
-  return spawn(process.execPath, [esbuildScript, "--watch", ...modArgs, ...extra], {
+  return spawn(process.execPath, [esbuildScript, "--watch", ...modArgs], {
     stdio: "inherit",
     cwd: ROOT,
     windowsHide: true,

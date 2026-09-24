@@ -1,11 +1,11 @@
 /**
- * Select integration test files for `--mod` / `--examples` / positional mod folders.
+ * Select integration test files for `--mod` / positional mod folders.
  */
 import { discoverMods, parseModFilters } from "../lib/mods.js";
 
 /**
  * Turn bare mod folder names into `--mod` flags.
- * Keeps `--view`, `--examples`, `--test-*`, and explicit `--mod`.
+ * Keeps `--view`, `--test-*`, and explicit `--mod`.
  *
  * @param {string[]} argv
  * @returns {string[]}
@@ -66,21 +66,14 @@ export function filterIntegrationFiles(files, repoPaths) {
 export function integrationTestRepoPaths(argv, discovered = discoverMods()) {
   const normalized = normalizeIntegrationArgv(argv);
   const filters = parseModFilters(normalized);
-  const examplesOnly = normalized.includes("--examples");
-  if (filters.length > 0) {
-    return filters.map((folder) => {
-      const mod = discovered.find((entry) => entry.folder === folder);
-      if (!mod) {
-        throw new Error(
-          `Unknown mod ${JSON.stringify(folder)}. Found: ${discovered.map((entry) => entry.folder).join(", ")}`,
-        );
-      }
-      if (examplesOnly && mod.root !== "examples") {
-        throw new Error(`mod ${JSON.stringify(folder)} is not under examples/`);
-      }
-      return mod.repoPath;
-    });
-  }
-  if (examplesOnly) return ["examples"];
-  return null;
+  if (filters.length === 0) return null;
+  return filters.map((folder) => {
+    const mod = discovered.find((entry) => entry.folder === folder);
+    if (!mod) {
+      throw new Error(
+        `Unknown mod ${JSON.stringify(folder)}. Found: ${discovered.map((entry) => entry.folder).join(", ")}`,
+      );
+    }
+    return mod.repoPath;
+  });
 }

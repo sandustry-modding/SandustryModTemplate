@@ -7,9 +7,9 @@ dist/
 logs
 /sandustry/
 /mods/
-/examples/
 .tmp/
 .env
 *.tsbuildinfo
 docs/
 SandustryTypes/
+src/examples/

@@ -7,32 +7,27 @@ import {
 } from "./integration-select.js";
 
 const discovered = [
-  { folder: "overlay-hotkey", root: "examples", repoPath: "examples/ui/overlay-hotkey" },
-  { folder: "i18n", root: "examples", repoPath: "examples/api/i18n" },
+  { folder: "examples", root: "src", repoPath: "src/examples" },
   { folder: "template", root: "src", repoPath: "src/template" },
-  { folder: "custom-element", root: "examples", repoPath: "examples/content/custom-element" },
 ];
 
 const files = [
-  "examples/api/i18n/i18n.integration.test.ts",
-  "examples/ui/overlay-hotkey/overlay.integration.test.ts",
-  "examples/content/custom-element/element.integration.test.ts",
+  "src/examples/examples.integration.test.ts",
   "modkit/test/game.integration.test.ts",
   "src/template/template.integration.test.ts",
 ];
 
 test("normalizeIntegrationArgv turns positional folders into --mod", () => {
-  assert.deepEqual(normalizeIntegrationArgv(["--view", "collector-element"]), [
+  assert.deepEqual(normalizeIntegrationArgv(["--view", "examples"]), [
     "--view",
     "--mod",
-    "collector-element",
+    "examples",
   ]);
-  assert.deepEqual(normalizeIntegrationArgv(["template", "i18n", "--examples"]), [
+  assert.deepEqual(normalizeIntegrationArgv(["template", "examples"]), [
     "--mod",
     "template",
     "--mod",
-    "i18n",
-    "--examples",
+    "examples",
   ]);
   assert.deepEqual(normalizeIntegrationArgv(["--mod", "template", "--view"]), [
     "--mod",
@@ -47,49 +42,33 @@ test("filterIntegrationFiles keeps the full list when no prefixes are set", () =
 });
 
 test("filterIntegrationFiles keeps files under a selected mod folder", () => {
-  assert.deepEqual(filterIntegrationFiles(files, ["examples/ui/overlay-hotkey"]), [
-    "examples/ui/overlay-hotkey/overlay.integration.test.ts",
+  assert.deepEqual(filterIntegrationFiles(files, ["src/examples"]), [
+    "src/examples/examples.integration.test.ts",
   ]);
-  assert.deepEqual(filterIntegrationFiles(files, ["examples/content/custom-element"]), [
-    "examples/content/custom-element/element.integration.test.ts",
+  assert.deepEqual(filterIntegrationFiles(files, ["src/template"]), [
+    "src/template/template.integration.test.ts",
   ]);
 });
 
 test("filterIntegrationFiles does not match a sibling prefix", () => {
-  assert.deepEqual(filterIntegrationFiles(files, ["examples/ui/overlay"]), []);
+  assert.deepEqual(filterIntegrationFiles(files, ["src/example"]), []);
 });
 
 test("integrationTestRepoPaths maps --mod folders", () => {
-  assert.deepEqual(integrationTestRepoPaths(["--mod", "overlay-hotkey"], discovered), [
-    "examples/ui/overlay-hotkey",
-  ]);
+  assert.deepEqual(integrationTestRepoPaths(["--mod", "examples"], discovered), ["src/examples"]);
   assert.deepEqual(
-    integrationTestRepoPaths(["--mod", "overlay-hotkey", "--mod", "template"], discovered),
-    ["examples/ui/overlay-hotkey", "src/template"],
+    integrationTestRepoPaths(["--mod", "examples", "--mod", "template"], discovered),
+    ["src/examples", "src/template"],
   );
 });
 
 test("integrationTestRepoPaths maps positional mod folders", () => {
-  assert.deepEqual(integrationTestRepoPaths(["overlay-hotkey"], discovered), [
-    "examples/ui/overlay-hotkey",
-  ]);
+  assert.deepEqual(integrationTestRepoPaths(["examples"], discovered), ["src/examples"]);
   assert.deepEqual(integrationTestRepoPaths(["--view", "template"], discovered), ["src/template"]);
 });
 
-test("integrationTestRepoPaths uses examples/ for --examples", () => {
-  assert.deepEqual(integrationTestRepoPaths(["--examples"], discovered), ["examples"]);
-  assert.deepEqual(filterIntegrationFiles(files, ["examples"]), [
-    "examples/api/i18n/i18n.integration.test.ts",
-    "examples/content/custom-element/element.integration.test.ts",
-    "examples/ui/overlay-hotkey/overlay.integration.test.ts",
-  ]);
-});
-
-test("integrationTestRepoPaths rejects --examples --mod from src/", () => {
-  assert.throws(
-    () => integrationTestRepoPaths(["--examples", "--mod", "template"], discovered),
-    /not under examples/,
-  );
+test("integrationTestRepoPaths returns null when no mod is selected", () => {
+  assert.equal(integrationTestRepoPaths(["--view"], discovered), null);
 });
 
 test("integrationTestRepoPaths rejects unknown --mod", () => {

@@ -1,14 +1,11 @@
 #!/usr/bin/env node
 /**
  * One-shot debug bundles for integration tests.
- * Default: src/. Builds examples/ when that folder is present. `--mod` / `--examples` build only that set.
- * `--examples` clones SandustryExamples into examples/ when the folder is missing.
+ * Default: src/ and mods/. `--mod` builds only that set.
  */
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { ensureExamplesRepo } from "../lib/examples-repo.js";
 import { loadMods, parseModFilters } from "../lib/mods.js";
 
 const ROOT = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
@@ -40,20 +37,14 @@ export async function buildModsForIntegration(argv = process.argv.slice(2)) {
     console.error(error instanceof Error ? error.message : String(error));
     process.exit(1);
   }
-  const examplesOnly = argv.includes("--examples");
-  if (examplesOnly) ensureExamplesRepo(ROOT);
 
-  if (filters.length === 0 && !examplesOnly) {
+  if (filters.length === 0) {
     runBuild(["--debug"]);
-    if (existsSync(join(ROOT, "examples"))) {
-      runBuild(["--debug", "--examples"]);
-    }
     return { gameIds: undefined };
   }
 
   /** @type {string[]} */
   const esbuildArgs = ["--debug"];
-  if (examplesOnly) esbuildArgs.push("--examples");
   for (const folder of filters) {
     esbuildArgs.push("--mod", folder);
   }

@@ -13,6 +13,7 @@
  *   sandustry/workshop/   link to Steam Workshop content
  *   docs/                 clone of sandustry-modding.github.io
  *   SandustryTypes/       clone of sandustry-modding/SandustryTypes (linked as @sandustry-modding/types)
+ *   src/examples/         clone of sandustry-modding/SandustryExamples
  *                Linux: ~/.config/sandustry/logs
  *                Windows: %APPDATA%/sandustry/logs
  */
@@ -33,6 +34,7 @@ import { ensureAllModDebugSaves } from "../lib/debug-save.js";
 import { DEFAULT_MOD_ROOTS, discoverMods, loadMods } from "../lib/mods.js";
 import { syncLaunchDebugModPicker } from "../lib/sync-debug-mod-picker.js";
 import { ensureDocsRepo } from "../lib/docs-repo.js";
+import { ensureExamplesRepo } from "../lib/examples-repo.js";
 import { ensureTypesRepo, syncTypesRepo } from "../lib/types-repo.js";
 import { ensureRepoDistLink } from "../lib/mod-path.js";
 import { SANDUSTRY, SANDUSTRY_DIR } from "../lib/sandustry-common.js";
@@ -143,7 +145,7 @@ function checkModPackageInstalls() {
   }
 
   if (missing.length === 0) {
-    ok("Mod npm packages (package.json in src/ or examples/)");
+    ok("Mod npm packages (package.json in src/)");
     return;
   }
   fail(
@@ -383,6 +385,13 @@ console.log("Sandustry mod template setup");
 console.log("");
 
 ensureEnvFile();
+try {
+  ensureExamplesRepo(ROOT);
+  ok("Examples clone (src/examples/)");
+} catch (error) {
+  const message = error instanceof Error ? error.message : String(error);
+  fail(`Examples clone: ${message}`);
+}
 try {
   ensureDocsRepo(ROOT);
   ok("Docs site clone (docs/)");

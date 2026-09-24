@@ -29,7 +29,6 @@ import {
   publishStagingDir,
   PUBLISH_OUT_ROOT,
 } from "../lib/mods.js";
-import { ensureExamplesRepo } from "../lib/examples-repo.js";
 import { copyWorkshopInstallFiles, removeWorkshopPublishFiles } from "../lib/workshop-files.js";
 import { modkitAliasPlugin } from "../lib/modkit-alias.js";
 import { blockMainWorkerImportsPlugin } from "../lib/block-main-worker-imports.js";
@@ -43,7 +42,6 @@ const MODKIT_DIR = join(ROOT, "modkit");
 const INTERNAL_ESBUILD = join(MODKIT_DIR, "internal/esbuild");
 const CONSOLE_SHIM = join(INTERNAL_ESBUILD, "console.ts");
 const args = process.argv.slice(2);
-if (args.includes("--examples")) ensureExamplesRepo(ROOT);
 const watch = args.includes("--watch");
 const game = args.includes("--game");
 const debugFlag = args.includes("--debug");

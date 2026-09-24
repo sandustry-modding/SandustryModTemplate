@@ -12,7 +12,7 @@ Kit and API pages: [docs site](https://sandustry-modding.github.io/).
 ## Features
 
 - **Multi-mod** — One repo, many mods.
-  Each `src/<name>/` or cloned `examples/<name>/` with a `modinfo.ts` builds to its own game folder.
+  Each `src/<name>/` with a `modinfo.ts` builds to its own game folder.
 - **[TypeScript](https://sandustry-modding.github.io/#/search)** — Sandkit API types from a local [SandustryTypes](https://github.com/sandustry-modding/SandustryTypes) clone (`@sandustry-modding/types`)
 - **[React HUD](https://sandustry-modding.github.io/#/modkit/react)** — JSX via `sandkit.react`, plus the [UI kit gallery](https://sandustry-modding.github.io/#/ui/)
 - **[Watch rebuild](https://sandustry-modding.github.io/#/builds)** — `npm run dev` writes `main.js` to the game mods folder
@@ -39,7 +39,7 @@ Continue for your campaign stays on last-played.
 F5 does not change last-played. `npm run setup` creates the Steam test world when it is missing and does not overwrite it.
 It does not put a `.save` in the mod folder. **Sandustry (all mods)** starts every selected mod and Continues.
 **Alt+E** opens the overlay.
-`npm run examples` clones extra samples (`examples/overlay-hotkey`).
+`npm run examples` clones the gallery into `src/examples/` when that folder is missing, then watches it.
 
 Windows: the same commands work in PowerShell.
 If setup cannot find the game:
@@ -85,7 +85,7 @@ Shared code goes in `modkit/`.
 - **`npm run dev:release`** — Same watch as `dev`, without `debugPatches` or sourcemaps.
   Use to test mods before upload to workshop.
 - **`npm run dev:pick`** — Same as `dev`, with a TTY picker first
-- **`npm run examples`** — Clone [SandustryExamples](https://github.com/sandustry-modding/SandustryExamples) into `examples/` if that folder is missing, then watch those mods (optional `--mod <name>`)
+- **`npm run examples`** — Clone [SandustryExamples](https://github.com/sandustry-modding/SandustryExamples) into `src/examples/` when that folder is missing, then watch that mod
 
 ### Release
 
@@ -98,8 +98,8 @@ Shared code goes in `modkit/`.
 - **`npm run test`** — Unit tests only (`*.test.ts`).
   No Chromium.
 - **`npm run test:integration`** — Build mods, boot extracted dist in headless Chromium (CDP `:9224`), run `*.integration.test.ts`.
-  Optional mod folder (`nr test:integration template`) or `--examples` (clones sample mods when `examples/` is missing).
-  Use **`npm run test:integration:view`** for a visible window (`nr test:integration:view collector-element`).
+  Optional mod folder (`nr test:integration template` or `nr test:integration examples`).
+  Use **`npm run test:integration:view`** for a visible window (`nr test:integration:view examples`).
 - **`npm run lint`** — Typecheck, oxlint, and format check
 - **`npm run lint:fix`** — oxlint `--fix` and oxfmt
 
@@ -111,15 +111,15 @@ Build flags, Workshop upload, and Tailwind details: [Builds](https://sandustry-m
 
 ## Folder layout
 
-Each `src/<name>/`, `mods/<name>/`, or `examples/<name>/` folder with a `modinfo.json` is one game mod.
+Each `src/<name>/` or `mods/<name>/` folder with a `modinfo.ts` is one game mod.
 Put shared code in `modkit/`.
 Do not import files from another mod folder.
 
 | Path                  | What it is                                                                                                                        |
 | --------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | `src/<name>/`         | Your mod (`modinfo.json` + `main.ts`)                                                                                             |
+| `src/examples/`       | Clone of [SandustryExamples](https://github.com/sandustry-modding/SandustryExamples) (gitignored). One gallery mod.                 |
 | `mods/<name>/`        | Optional private mods (gitignored)                                                                                                |
-| `examples/<name>/`    | Sample mods (cloned, gitignored)                                                                                                  |
 | `docs/`               | Clone of [sandustry-modding.github.io](https://github.com/sandustry-modding/sandustry-modding.github.io) (gitignored)             |
 | `SandustryTypes/`     | Clone of [SandustryTypes](https://github.com/sandustry-modding/SandustryTypes) (gitignored). Linked as `@sandustry-modding/types` |
 | `modkit/`             | Shared kit. Import as `@modkit/*`                                                                                                 |
@@ -128,8 +128,8 @@ Do not import files from another mod folder.
 | `sandustry/`          | Local game extract and OS folder links (gitignored; see below)                                                                    |
 
 `mods/` is optional and gitignored, with the same `modinfo` rules as `src/`. `npm run build`, `npm run dev`, and `npm run publish` include it.
-`examples/` is gitignored.
-`npm run examples` clones [SandustryExamples](https://github.com/sandustry-modding/SandustryExamples) into that folder when it is missing.
+`src/examples/` is gitignored.
+`npm run setup` and `npm run examples` clone [SandustryExamples](https://github.com/sandustry-modding/SandustryExamples) into `src/examples/` when that folder is missing.
 `docs/` is gitignored.
 `npm run setup` (and `npm run docs`) clones [sandustry-modding.github.io](https://github.com/sandustry-modding/sandustry-modding.github.io) into that folder when it is missing.
 `SandustryTypes/` is gitignored.
@@ -173,18 +173,33 @@ Workshop items live under `steamapps/workshop/content/2764460` in the Steam libr
 ### Sample mods
 
 Start from [`src/template/`](src/template/).
-Sample mods live in [SandustryExamples](https://github.com/sandustry-modding/SandustryExamples).
-Run `npm run examples` to clone them into `examples/`, then copy a folder into `src/<your-mod>/`.
+The gallery mod is [`src/examples/`](src/examples/).
+Its id is `sandustry-modding.examples`.
+Press **Alt+E** in that world.
+Copy one feature folder into your mod when you want that sample.
+Groups, keys, and each group README are in [src/examples/README.md](src/examples/README.md).
+
+| Category | Folders |
+| --- | --- |
+| World and simulation | Grid, elements, terrain, reactions, dig, fire, hooks, events |
+| Factory | Structures, processing, recipes, pipes, collector |
+| Energy | Conductor, signals, resources |
+| UI | Overlay, input, toast, hotbar, sound, lights |
+| Player | Teleport, inventory, tools, camera, items |
+| Progression | Tech, upgrades, discoveries, objectives |
+| Entities | Creatures, projectiles, pickups |
+| Host | Settings, storage, worker, time, assets |
 
 Mods in `src/` that ship with this template:
 
-| Folder                      | What it shows                                                                                                                      |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| [`template`](src/template/) | Starter mod. `register` folders, worker, overlay, element, terrain, and structure. Change `id` / `name` / `author` in `modinfo.ts` |
+| Folder | What it shows |
+| --- | --- |
+| [`template`](src/template/) | Starter mod. Change `id`, `name`, and `author` in `modinfo.ts`. |
+| [`examples`](src/examples/) | One gallery mod. Categories are in its README. Press **Alt+E**. |
 
 ### Files in a mod folder
 
-Every mod under `src/<name>/`, `mods/<name>/`, or `examples/<name>/` needs these files:
+Every mod under `src/<name>/` or `mods/<name>/` needs these files:
 
 | File           | Role                                                                                                               |
 | -------------- | ------------------------------------------------------------------------------------------------------------------ |
@@ -194,9 +209,9 @@ Every mod under `src/<name>/`, `mods/<name>/`, or `examples/<name>/` needs these
 
 TypeScript uses two projects.
 [`tsconfig.json`](tsconfig.json) is a solution file (`files` is empty) so the editor loads both projects.
-[`tsconfig.main.json`](tsconfig.main.json) checks main-thread code under `modkit/`, `src/`, `examples/`, and `mods/`.
+[`tsconfig.main.json`](tsconfig.main.json) checks main-thread code under `modkit/`, `src/`, and `mods/`.
 It loads main ambient `sandkit` from `@sandustry-modding/types` (`src/global.d.ts` in `tsconfig.main.json` `files`) and **excludes** `worker.ts` and `*.worker.ts`.
-[`tsconfig.worker.json`](tsconfig.worker.json) typechecks worker entry files under `src/`, `examples/`, and `mods/`.
+[`tsconfig.worker.json`](tsconfig.worker.json) typechecks worker entry files under `src/` and `mods/`.
 That project loads the worker ambient so `sandkit.api` is `WorkerSandkitApi` with no cast.
 Run `npm run typecheck` to check both.
 Never load main and worker ambients in one TypeScript program.

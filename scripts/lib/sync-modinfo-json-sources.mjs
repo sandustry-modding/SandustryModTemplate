@@ -11,9 +11,7 @@ import { writeJsonIfChanged } from "./write-if-changed.js";
 
 const roots = process.argv.includes("--template")
   ? ["src/template"]
-  : process.argv.includes("--examples")
-    ? ["examples"]
-    : ["examples", "src/template"];
+  : ["src/template", "src/examples"];
 
 for (const root of roots) {
   for (const mod of discoverMods({ roots: [root] })) {

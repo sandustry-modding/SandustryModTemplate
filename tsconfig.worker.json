@@ -6,8 +6,6 @@
   "include": [
     "src/**/worker.ts",
     "src/**/*.worker.ts",
-    "examples/**/worker.ts",
-    "examples/**/*.worker.ts",
     "mods/**/worker.ts",
     "mods/**/*.worker.ts"
   ],

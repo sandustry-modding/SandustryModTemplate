@@ -17,7 +17,7 @@ import { gameModDir, syncModGameFolders } from "./mod-path.js";
 const ROOT = dirname(dirname(dirname(fileURLToPath(import.meta.url))));
 
 /** All mod source roots (discovery, isolation, setup). */
-export const MOD_ROOTS = ["src", "mods", "examples"];
+export const MOD_ROOTS = ["src", "mods"];
 
 /** Default for `npm run build` / `npm run dev` — `src/` and private `mods/`. */
 export const DEFAULT_MOD_ROOTS = ["src", "mods"];
@@ -27,7 +27,6 @@ export const DEFAULT_MOD_ROOTS = ["src", "mods"];
  * @returns {string[]}
  */
 export function resolveModRoots(argv) {
-  if (argv.includes("--examples")) return ["examples"];
   if (parseModFilters(argv).length > 0) return MOD_ROOTS;
   return DEFAULT_MOD_ROOTS;
 }
@@ -110,15 +109,15 @@ export function modIsolationPlugin(root = ROOT) {
 /**
  * @typedef {object} DiscoveredMod
  * @property {string} folder Leaf folder name (`--mod` id)
- * @property {string} root `src`, `mods`, or `examples`
+ * @property {string} root `src` or `mods`
  * @property {string} dir Absolute path to the mod folder
- * @property {string} repoPath Repo-relative path (for example `examples/ui/overlay-hotkey`)
+ * @property {string} repoPath Repo-relative path (for example `src/examples`)
  */
 
 /**
  * Walk a mod root and collect every directory that contains `modinfo.json`
  * or `modinfo.ts`.
- * @param {string} modRoot `src`, `mods`, or `examples`
+ * @param {string} modRoot `src` or `mods`
  * @returns {DiscoveredMod[]}
  */
 function discoverModsInTree(modRoot) {
@@ -261,12 +260,7 @@ export async function loadMods(argv = process.argv.slice(2)) {
   const discovered = discoverMods({ roots: modRoots });
   const allDiscovered = modRoots.length === MOD_ROOTS.length ? discovered : discoverMods();
   if (discovered.length === 0) {
-    const hint =
-      modRoots.length === 1 && modRoots[0] === "examples"
-        ? "Run npm run examples to clone SandustryExamples, or add examples/<name>/modinfo.json"
-        : modRoots.every((root) => root === "src" || root === "mods")
-          ? "Add src/<name>/modinfo.json or mods/<name>/modinfo.json"
-          : "Add src/<name>/modinfo.json, mods/<name>/modinfo.json, or examples/<name>/modinfo.json";
+    const hint = "Add src/<name>/modinfo.ts or mods/<name>/modinfo.ts";
     throw new Error(`No mods found. ${hint}`);
   }
 

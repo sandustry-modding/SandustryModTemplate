@@ -82,10 +82,7 @@ export async function pickDevModArgs(argv, options = {}) {
   const modRoots = options.roots ?? resolveModRoots(argv);
   const mods = discoverMods({ roots: modRoots });
   if (mods.length === 0) {
-    const hint =
-      modRoots.length === 1 && modRoots[0] === "examples"
-        ? "Run npm run examples to clone SandustryExamples, or add examples/<name>/modinfo.json"
-        : "Add src/<name>/modinfo.ts";
+    const hint = "Add src/<name>/modinfo.ts";
     throw new Error(`No mods found. ${hint}`);
   }
   const validFolders = new Set(mods.map((mod) => mod.folder));
@@ -130,7 +127,7 @@ export async function pickDevModArgs(argv, options = {}) {
     for (const root of modRoots) {
       const rootMods = byRoot(root);
       if (rootMods.length > 0) {
-        groups.push({ label: root === "examples" ? "Examples" : root, mods: rootMods });
+        groups.push({ label: root, mods: rootMods });
       }
     }
 
